@@ -2,9 +2,35 @@
 
 import { FormEvent, useMemo, useRef, useState } from "react";
 
-type Portal = "home" | "candidate" | "company";
-type CandidateView = "inicio" | "perfil" | "questionario" | "curriculo";
+type Portal = "home" | "candidate" | "company" | "admin";
+type CandidateView = "inicio" | "perfil" | "questionario" | "curriculo" | "eventos";
 type CompanyView = "visao" | "talentos" | "consultoria" | "conteudos" | "empresa";
+type AdminView = "visao" | "palestras" | "treinamentos" | "participantes";
+
+type Talk = {
+  id: number;
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  format: "Online" | "Presencial";
+  location: string;
+  capacity: number;
+  issued: number;
+  status: "Publicada" | "Rascunho";
+};
+
+type TrainingBooking = {
+  id: number;
+  company: string;
+  topic: string;
+  date: string;
+  time: string;
+  format: "Online" | "Presencial" | "Híbrido";
+  participants: number;
+  contact: string;
+  status: "Solicitado" | "Confirmado";
+};
 
 type Candidate = {
   id: number;
@@ -80,11 +106,65 @@ const candidates: Candidate[] = [
   },
 ];
 
+const initialTalks: Talk[] = [
+  {
+    id: 1,
+    title: "Carreira sem barreiras",
+    description: "Estratégias práticas para fortalecer sua trajetória profissional e se preparar para processos seletivos.",
+    date: "24/07/2026",
+    time: "19:00",
+    format: "Online",
+    location: "Transmissão ao vivo",
+    capacity: 120,
+    issued: 86,
+    status: "Publicada",
+  },
+  {
+    id: 2,
+    title: "Acessibilidade que transforma equipes",
+    description: "Uma conversa aberta para profissionais e empresas sobre tecnologia, autonomia e colaboração.",
+    date: "06/08/2026",
+    time: "15:00",
+    format: "Presencial",
+    location: "SENAI São Paulo",
+    capacity: 80,
+    issued: 63,
+    status: "Publicada",
+  },
+  {
+    id: 3,
+    title: "Comunicação inclusiva na prática",
+    description: "Como criar encontros, conteúdos e relações de trabalho mais acessíveis desde o primeiro contato.",
+    date: "19/08/2026",
+    time: "10:00",
+    format: "Online",
+    location: "Transmissão ao vivo",
+    capacity: 150,
+    issued: 41,
+    status: "Publicada",
+  },
+];
+
+const initialTrainingBookings: TrainingBooking[] = [
+  {
+    id: 1,
+    company: "NorteSul Tecnologia",
+    topic: "Liderança inclusiva na prática",
+    date: "30/07/2026",
+    time: "14:00",
+    format: "Online",
+    participants: 24,
+    contact: "renata@nortesul.com.br",
+    status: "Confirmado",
+  },
+];
+
 const candidateNavigation: Array<{ id: CandidateView; label: string; marker: string }> = [
   { id: "inicio", label: "Início", marker: "01" },
   { id: "perfil", label: "Meu perfil", marker: "02" },
   { id: "questionario", label: "Questionário", marker: "03" },
   { id: "curriculo", label: "Currículo", marker: "04" },
+  { id: "eventos", label: "Palestras e ingressos", marker: "05" },
 ];
 
 const companyNavigation: Array<{ id: CompanyView; label: string; marker: string }> = [
@@ -118,6 +198,7 @@ function Home({ onEnter }: { onEnter: (portal: Portal) => void }) {
           <a href="#como-funciona">Como funciona</a>
           <a href="#solucoes">Soluções</a>
           <button className="text-button" type="button" onClick={() => onEnter("company")}>Área da empresa</button>
+          <button className="admin-entry" type="button" onClick={() => onEnter("admin")}>Administração</button>
         </nav>
       </header>
 
@@ -486,7 +567,71 @@ function CandidateResume({ onSaved }: { onSaved: (message: string) => void }) {
   );
 }
 
-function CandidatePortal({ onExit }: { onExit: () => void }) {
+function CandidateEvents({
+  talks,
+  reservedTalkIds,
+  onReserve,
+}: {
+  talks: Talk[];
+  reservedTalkIds: number[];
+  onReserve: (talkId: number) => void;
+}) {
+  const publishedTalks = talks.filter((talk) => talk.status === "Publicada");
+
+  return (
+    <section className="form-page events-page" aria-labelledby="events-title">
+      <header className="inner-heading events-heading">
+        <div>
+          <p className="section-kicker">Palestras APTA</p>
+          <h1 id="events-title">Conhecimento também abre portas.</h1>
+          <p>Reserve gratuitamente seu ingresso e acompanhe encontros preparados com acessibilidade desde o início.</p>
+        </div>
+        <span className="ticket-summary"><b>{reservedTalkIds.length}</b> {reservedTalkIds.length === 1 ? "ingresso retirado" : "ingressos retirados"}</span>
+      </header>
+      <div className="talk-grid">
+        {publishedTalks.map((talk) => {
+          const remaining = Math.max(0, talk.capacity - talk.issued);
+          const reserved = reservedTalkIds.includes(talk.id);
+          const occupancy = Math.min(100, Math.round((talk.issued / talk.capacity) * 100));
+          return (
+            <article className="talk-card" key={talk.id}>
+              <div className="talk-date"><span>{talk.date.slice(0, 5)}</span><small>{talk.time}</small></div>
+              <span className={`event-format event-format--${talk.format === "Online" ? "online" : "onsite"}`}>{talk.format}</span>
+              <h2>{talk.title}</h2>
+              <p>{talk.description}</p>
+              <dl>
+                <div><dt>Local</dt><dd>{talk.location}</dd></div>
+                <div><dt>Disponibilidade</dt><dd>{remaining > 0 ? `${remaining} lugares restantes` : "Ingressos esgotados"}</dd></div>
+              </dl>
+              <div className="seat-progress" aria-label={`${talk.issued} de ${talk.capacity} ingressos retirados`}><div className="progress-track"><span style={{ width: `${occupancy}%` }} /></div><small>{talk.issued}/{talk.capacity}</small></div>
+              <button
+                className={`button button--full ${reserved ? "button--ticket" : "button--primary"}`}
+                type="button"
+                disabled={remaining === 0 && !reserved}
+                onClick={() => !reserved && onReserve(talk.id)}
+              >
+                {reserved ? "✓ Ingresso garantido" : remaining === 0 ? "Ingressos esgotados" : "Retirar ingresso"}
+              </button>
+              {reserved && <p className="ticket-note">Seu ingresso é digital. Apresente seu nome no credenciamento.</p>}
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function CandidatePortal({
+  onExit,
+  talks,
+  reservedTalkIds,
+  onReserve,
+}: {
+  onExit: () => void;
+  talks: Talk[];
+  reservedTalkIds: number[];
+  onReserve: (talkId: number) => void;
+}) {
   const [view, setView] = useState<CandidateView>("inicio");
   const [fontScale, setFontScale] = useState(100);
   const [highContrast, setHighContrast] = useState(false);
@@ -521,6 +666,7 @@ function CandidatePortal({ onExit }: { onExit: () => void }) {
           {view === "perfil" && <CandidateProfile onSaved={saveMessage} />}
           {view === "questionario" && <CandidateQuestionnaire onSaved={saveMessage} />}
           {view === "curriculo" && <CandidateResume onSaved={saveMessage} />}
+          {view === "eventos" && <CandidateEvents talks={talks} reservedTalkIds={reservedTalkIds} onReserve={(talkId) => { onReserve(talkId); saveMessage("Ingresso retirado com sucesso."); }} />}
         </main>
       </div>
       <div className="live-message" role="status" aria-live="polite">{message}</div>
@@ -693,16 +839,63 @@ function Consulting({ onMessage }: { onMessage: (message: string) => void }) {
   );
 }
 
-function Training({ onMessage }: { onMessage: (message: string) => void }) {
+function Training({
+  onMessage,
+  bookings,
+  onSchedule,
+}: {
+  onMessage: (message: string) => void;
+  bookings: TrainingBooking[];
+  onSchedule: (booking: Omit<TrainingBooking, "id" | "status">) => void;
+}) {
+  const [showScheduler, setShowScheduler] = useState(false);
   const items = [
     { type: "Treinamento", title: "Liderança inclusiva na prática", detail: "4 módulos • 1h 40min", progress: 35, color: "blue" },
     { type: "Palestra ao vivo", title: "Vieses na seleção e contratação", detail: "28 jul • 15:00", progress: 0, color: "coral" },
     { type: "Trilha", title: "Acessibilidade no dia a dia", detail: "6 conteúdos • 2h 15min", progress: 68, color: "lime" },
     { type: "Guia prático", title: "Processo seletivo acessível", detail: "PDF • 18 páginas", progress: 0, color: "dark" },
   ];
+
+  function scheduleTraining(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    onSchedule({
+      company: "NorteSul Tecnologia",
+      topic: String(data.get("topic") ?? ""),
+      date: String(data.get("date") ?? ""),
+      time: String(data.get("time") ?? ""),
+      format: String(data.get("format") ?? "Online") as TrainingBooking["format"],
+      participants: Number(data.get("participants") ?? 1),
+      contact: String(data.get("contact") ?? ""),
+    });
+    setShowScheduler(false);
+    event.currentTarget.reset();
+    onMessage("Solicitação de treinamento enviada para confirmação.");
+  }
+
   return (
     <section className="company-section" aria-labelledby="training-title">
-      <header className="company-heading"><div><p className="section-kicker">Desenvolvimento</p><h1 id="training-title">Treinamentos e palestras</h1><p>Conteúdos para transformar conhecimento em práticas inclusivas.</p></div><button className="button button--primary" type="button" onClick={() => onMessage("Agenda de treinamentos solicitada.")}>Agendar treinamento</button></header>
+      <header className="company-heading"><div><p className="section-kicker">Desenvolvimento</p><h1 id="training-title">Treinamentos e palestras</h1><p>Conteúdos para transformar conhecimento em práticas inclusivas.</p></div><button className="button button--primary" type="button" onClick={() => setShowScheduler(!showScheduler)}>{showScheduler ? "Fechar agenda" : "Agendar treinamento"}</button></header>
+      {showScheduler && (
+        <form className="training-scheduler" onSubmit={scheduleTraining}>
+          <div className="scheduler-heading"><div><p className="section-kicker">Novo agendamento</p><h2>Escolha o treinamento ideal para sua equipe</h2></div><span>Resposta em até 1 dia útil</span></div>
+          <div className="scheduler-grid">
+            <label>Tema do treinamento<select name="topic" required defaultValue="Liderança inclusiva na prática"><option>Liderança inclusiva na prática</option><option>Recrutamento e seleção acessível</option><option>Acessibilidade digital no trabalho</option><option>Comunicação inclusiva</option></select></label>
+            <label>Formato<select name="format" required defaultValue="Online"><option>Online</option><option>Presencial</option><option>Híbrido</option></select></label>
+            <label>Data desejada<input name="date" type="date" required min="2026-07-17" /></label>
+            <label>Horário<input name="time" type="time" required /></label>
+            <label>Número de participantes<input name="participants" type="number" required min="1" max="500" defaultValue="20" /></label>
+            <label>E-mail para confirmação<input name="contact" type="email" required defaultValue="renata@nortesul.com.br" /></label>
+          </div>
+          <div className="form-actions"><button className="button button--outline" type="button" onClick={() => setShowScheduler(false)}>Cancelar</button><button className="button button--primary" type="submit">Solicitar agendamento</button></div>
+        </form>
+      )}
+      {bookings.length > 0 && (
+        <section className="company-bookings" aria-labelledby="bookings-title">
+          <div className="section-title-row"><div><p className="section-kicker">Minha agenda</p><h2 id="bookings-title">Treinamentos solicitados</h2></div></div>
+          <div className="booking-list">{bookings.map((booking) => <article key={booking.id}><time>{booking.date || "A definir"}<small>{booking.time || "Horário a definir"}</small></time><span><b>{booking.topic}</b><small>{booking.format} • {booking.participants} participantes</small></span><span className={`booking-status booking-status--${booking.status === "Confirmado" ? "confirmed" : "pending"}`}>{booking.status}</span></article>)}</div>
+        </section>
+      )}
       <div className="content-highlight"><div><span>Recomendado para sua empresa</span><h2>Trilha: do recrutamento à permanência</h2><p>Uma jornada completa para estruturar processos, preparar equipes e acompanhar os primeiros 90 dias.</p><button className="button button--light" type="button" onClick={() => onMessage("Trilha adicionada ao plano de desenvolvimento.")}>Começar trilha <span aria-hidden="true">→</span></button></div><strong aria-hidden="true">360°</strong></div>
       <div className="section-title-row content-title"><div><p className="section-kicker">Biblioteca</p><h2>Continue aprendendo</h2></div><div className="category-pills"><button type="button" className="active">Todos</button><button type="button">Treinamentos</button><button type="button">Palestras</button><button type="button">Guias</button></div></div>
       <div className="content-grid">{items.map((item) => <article className="content-card" key={item.title}><div className={`content-cover content-cover--${item.color}`}><span>{item.type}</span><b aria-hidden="true">APTA</b></div><div className="content-body"><small>{item.detail}</small><h3>{item.title}</h3>{item.progress > 0 && <div className="content-progress"><div className="progress-track"><span style={{ width: `${item.progress}%` }} /></div><small>{item.progress}% concluído</small></div>}<button type="button" onClick={() => onMessage(`${item.title} aberto.`)}>{item.progress > 0 ? "Continuar" : "Acessar conteúdo"} <span aria-hidden="true">→</span></button></div></article>)}</div>
@@ -738,7 +931,15 @@ function CandidateDrawer({ candidate, onClose, onMessage }: { candidate: Candida
   );
 }
 
-function CompanyPortal({ onExit }: { onExit: () => void }) {
+function CompanyPortal({
+  onExit,
+  bookings,
+  onScheduleTraining,
+}: {
+  onExit: () => void;
+  bookings: TrainingBooking[];
+  onScheduleTraining: (booking: Omit<TrainingBooking, "id" | "status">) => void;
+}) {
   const [view, setView] = useState<CompanyView>("visao");
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [message, setMessage] = useState("");
@@ -758,7 +959,7 @@ function CompanyPortal({ onExit }: { onExit: () => void }) {
             {view === "visao" && <CompanyOverview onChange={setView} onOpen={setSelectedCandidate} />}
             {view === "talentos" && <TalentSearch onOpen={setSelectedCandidate} />}
             {view === "consultoria" && <Consulting onMessage={showMessage} />}
-            {view === "conteudos" && <Training onMessage={showMessage} />}
+            {view === "conteudos" && <Training onMessage={showMessage} bookings={bookings} onSchedule={onScheduleTraining} />}
             {view === "empresa" && <CompanyProfile onMessage={showMessage} />}
           </main>
         </div>
@@ -769,10 +970,215 @@ function CompanyPortal({ onExit }: { onExit: () => void }) {
   );
 }
 
+function AdminLogin({ onLogin, onExit }: { onLogin: () => void; onExit: () => void }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (email.trim().toLowerCase() === "admin@apta.org.br" && password === "apta360") {
+      setError("");
+      onLogin();
+      return;
+    }
+    setError("E-mail ou senha incorretos. Use o acesso de demonstração indicado abaixo.");
+  }
+
+  return (
+    <div className="admin-login-page">
+      <button className="admin-back" type="button" onClick={onExit}>← Voltar para o início</button>
+      <main className="admin-login-shell">
+        <section className="admin-login-brand">
+          <Brand inverse />
+          <p className="eyebrow eyebrow--light">Central de gestão</p>
+          <h1>Organize experiências que geram inclusão.</h1>
+          <p>Cadastre palestras, acompanhe ingressos e confirme treinamentos solicitados pelas empresas.</p>
+          <div className="admin-feature-list"><span><b>01</b> Gestão de palestras</span><span><b>02</b> Controle de capacidade</span><span><b>03</b> Agenda de treinamentos</span></div>
+        </section>
+        <section className="admin-login-card" aria-labelledby="admin-login-title">
+          <span className="admin-lock" aria-hidden="true">A</span>
+          <p className="section-kicker">Acesso restrito</p>
+          <h2 id="admin-login-title">Entrar na administração</h2>
+          <p>Use suas credenciais administrativas para continuar.</p>
+          <form onSubmit={submit}>
+            <label>E-mail administrativo<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="username" required placeholder="admin@apta.org.br" /></label>
+            <label>Senha<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required placeholder="••••••••" /></label>
+            {error && <p className="login-error" role="alert">{error}</p>}
+            <button className="button button--primary button--full" type="submit">Entrar com segurança</button>
+          </form>
+          <div className="demo-credentials"><b>Acesso de demonstração</b><span>admin@apta.org.br</span><span>Senha: apta360</span></div>
+        </section>
+      </main>
+    </div>
+  );
+}
+
+const adminNavigation: Array<{ id: AdminView; label: string; marker: string }> = [
+  { id: "visao", label: "Visão geral", marker: "01" },
+  { id: "palestras", label: "Palestras", marker: "02" },
+  { id: "treinamentos", label: "Treinamentos", marker: "03" },
+  { id: "participantes", label: "Ingressos", marker: "04" },
+];
+
+function AdminSidebar({ view, onChange, onExit }: { view: AdminView; onChange: (view: AdminView) => void; onExit: () => void }) {
+  return (
+    <aside className="admin-sidebar">
+      <button className="brand-button" type="button" onClick={onExit} aria-label="Voltar para o início"><Brand inverse /></button>
+      <span className="admin-label">Administração</span>
+      <nav aria-label="Administração APTA">
+        {adminNavigation.map((item) => <button type="button" key={item.id} className={view === item.id ? "active" : ""} aria-current={view === item.id ? "page" : undefined} onClick={() => onChange(item.id)}><Marker>{item.marker}</Marker>{item.label}</button>)}
+      </nav>
+      <div className="admin-profile"><span>AM</span><p><b>Ana Martins</b><small>Administradora</small></p></div>
+      <button className="sidebar-exit" type="button" onClick={onExit}>Sair da administração</button>
+    </aside>
+  );
+}
+
+function AdminOverview({ talks, bookings, onChange }: { talks: Talk[]; bookings: TrainingBooking[]; onChange: (view: AdminView) => void }) {
+  const tickets = talks.reduce((total, talk) => total + talk.issued, 0);
+  const totalCapacity = talks.reduce((total, talk) => total + talk.capacity, 0);
+  const pendingBookings = bookings.filter((booking) => booking.status === "Solicitado").length;
+  return (
+    <>
+      <header className="admin-heading"><div><p className="section-kicker">Central administrativa</p><h1>Visão geral</h1><p>Acompanhe palestras, ingressos e solicitações de treinamento.</p></div><button className="button button--primary" type="button" onClick={() => onChange("palestras")}>Criar palestra <span aria-hidden="true">＋</span></button></header>
+      <section className="admin-metrics" aria-label="Indicadores administrativos">
+        <article><span>Palestras publicadas</span><strong>{talks.filter((talk) => talk.status === "Publicada").length}</strong><small>{talks.length} eventos cadastrados</small></article>
+        <article><span>Ingressos retirados</span><strong>{tickets}</strong><small>de {totalCapacity} lugares disponíveis</small></article>
+        <article><span>Ocupação média</span><strong>{totalCapacity ? Math.round((tickets / totalCapacity) * 100) : 0}%</strong><small>em todos os eventos</small></article>
+        <article><span>Treinamentos pendentes</span><strong>{pendingBookings}</strong><small>{bookings.length} solicitações no total</small></article>
+      </section>
+      <div className="admin-overview-grid">
+        <section className="admin-panel">
+          <div className="section-title-row"><div><p className="section-kicker">Próximos encontros</p><h2>Palestras em destaque</h2></div><button type="button" onClick={() => onChange("palestras")}>Gerenciar</button></div>
+          <div className="admin-event-list">{talks.slice(0, 3).map((talk) => { const occupancy = Math.round((talk.issued / talk.capacity) * 100); return <article key={talk.id}><time><b>{talk.date.slice(0, 5)}</b><small>{talk.time}</small></time><span><b>{talk.title}</b><small>{talk.format} • {talk.location}</small><span className="progress-track"><span style={{ width: `${occupancy}%` }} /></span></span><strong>{talk.issued}/{talk.capacity}</strong></article>; })}</div>
+        </section>
+        <aside className="admin-panel admin-pending-panel">
+          <div className="section-title-row"><div><p className="section-kicker">Aguardando ação</p><h2>Treinamentos</h2></div></div>
+          {bookings.filter((booking) => booking.status === "Solicitado").slice(0, 3).map((booking) => <article key={booking.id}><span className="request-dot" aria-hidden="true" /><p><b>{booking.company}</b><small>{booking.topic}</small><small>{booking.date} • {booking.participants} pessoas</small></p></article>)}
+          {pendingBookings === 0 && <p className="admin-empty">Nenhuma solicitação pendente.</p>}
+          <button className="button button--outline button--full" type="button" onClick={() => onChange("treinamentos")}>Abrir agenda</button>
+        </aside>
+      </div>
+    </>
+  );
+}
+
+function AdminTalks({ talks, onCreate }: { talks: Talk[]; onCreate: (talk: Omit<Talk, "id" | "issued">) => void }) {
+  const [showForm, setShowForm] = useState(false);
+
+  function createTalk(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const rawDate = String(data.get("date") ?? "");
+    const [year, month, day] = rawDate.split("-");
+    onCreate({
+      title: String(data.get("title") ?? ""),
+      description: String(data.get("description") ?? ""),
+      date: rawDate ? `${day}/${month}/${year}` : "A definir",
+      time: String(data.get("time") ?? ""),
+      format: String(data.get("format") ?? "Online") as Talk["format"],
+      location: String(data.get("location") ?? ""),
+      capacity: Number(data.get("capacity") ?? 1),
+      status: String(data.get("status") ?? "Publicada") as Talk["status"],
+    });
+    setShowForm(false);
+    event.currentTarget.reset();
+  }
+
+  return (
+    <section className="admin-section" aria-labelledby="admin-talks-title">
+      <header className="admin-heading"><div><p className="section-kicker">Programação</p><h1 id="admin-talks-title">Palestras</h1><p>Cadastre eventos, defina a capacidade e acompanhe a retirada de ingressos.</p></div><button className="button button--primary" type="button" onClick={() => setShowForm(!showForm)}>{showForm ? "Fechar formulário" : "Nova palestra"}</button></header>
+      {showForm && <form className="admin-create-form" onSubmit={createTalk}><div className="section-title-row"><div><p className="section-kicker">Novo evento</p><h2>Informações da palestra</h2></div><span>Todos os campos são obrigatórios</span></div><div className="admin-form-grid"><label className="admin-field-wide">Título<input name="title" required placeholder="Ex.: Tecnologia assistiva e autonomia" /></label><label>Data<input name="date" type="date" required min="2026-07-17" /></label><label>Horário<input name="time" type="time" required /></label><label>Formato<select name="format" defaultValue="Online" required><option>Online</option><option>Presencial</option></select></label><label>Local ou canal<input name="location" required placeholder="Ex.: Auditório SENAI" /></label><label>Quantidade de pessoas<input name="capacity" type="number" min="1" max="5000" defaultValue="100" required /></label><label>Status<select name="status" defaultValue="Publicada"><option>Publicada</option><option>Rascunho</option></select></label><label className="admin-field-wide">Descrição<textarea name="description" rows={4} required placeholder="Explique o objetivo e o conteúdo do encontro." /></label></div><div className="form-actions"><button className="button button--outline" type="button" onClick={() => setShowForm(false)}>Cancelar</button><button className="button button--primary" type="submit">Salvar palestra</button></div></form>}
+      <div className="admin-table-wrap"><table className="admin-table"><caption className="sr-only">Palestras cadastradas</caption><thead><tr><th>Palestra</th><th>Data</th><th>Formato</th><th>Ingressos</th><th>Status</th></tr></thead><tbody>{talks.map((talk) => <tr key={talk.id}><td><b>{talk.title}</b><small>{talk.location}</small></td><td>{talk.date}<small>{talk.time}</small></td><td><span className="table-tag">{talk.format}</span></td><td><b>{talk.issued}/{talk.capacity}</b><span className="progress-track"><span style={{ width: `${Math.min(100, (talk.issued / talk.capacity) * 100)}%` }} /></span></td><td><span className={`table-status table-status--${talk.status === "Publicada" ? "live" : "draft"}`}>{talk.status}</span></td></tr>)}</tbody></table></div>
+    </section>
+  );
+}
+
+function AdminTrainings({ bookings, onConfirm }: { bookings: TrainingBooking[]; onConfirm: (bookingId: number) => void }) {
+  return (
+    <section className="admin-section" aria-labelledby="admin-training-title">
+      <header className="admin-heading"><div><p className="section-kicker">Agenda corporativa</p><h1 id="admin-training-title">Treinamentos</h1><p>Analise solicitações das empresas e confirme os próximos encontros.</p></div></header>
+      <div className="admin-booking-grid">{bookings.map((booking) => <article key={booking.id}><div className="booking-card-head"><span className="company-avatar">{booking.company.split(" ").map((part) => part[0]).join("").slice(0, 2)}</span><span className={`booking-status booking-status--${booking.status === "Confirmado" ? "confirmed" : "pending"}`}>{booking.status}</span></div><p className="section-kicker">{booking.company}</p><h2>{booking.topic}</h2><dl><div><dt>Data e horário</dt><dd>{booking.date || "A definir"} • {booking.time || "A definir"}</dd></div><div><dt>Formato</dt><dd>{booking.format}</dd></div><div><dt>Participantes</dt><dd>{booking.participants} pessoas</dd></div><div><dt>Contato</dt><dd>{booking.contact}</dd></div></dl>{booking.status === "Solicitado" ? <button className="button button--primary button--full" type="button" onClick={() => onConfirm(booking.id)}>Confirmar treinamento</button> : <button className="button button--outline button--full" type="button">Ver detalhes</button>}</article>)}</div>
+    </section>
+  );
+}
+
+function AdminTickets({ talks }: { talks: Talk[] }) {
+  return (
+    <section className="admin-section" aria-labelledby="admin-tickets-title">
+      <header className="admin-heading"><div><p className="section-kicker">Controle de capacidade</p><h1 id="admin-tickets-title">Ingressos</h1><p>Visualize a ocupação e a disponibilidade de cada palestra.</p></div><button className="button button--outline" type="button">Exportar lista</button></header>
+      <div className="ticket-admin-grid">{talks.map((talk) => { const remaining = Math.max(0, talk.capacity - talk.issued); const occupancy = Math.min(100, Math.round((talk.issued / talk.capacity) * 100)); return <article key={talk.id}><div className="ticket-admin-top"><span>{talk.date}<small>{talk.time}</small></span><b>{occupancy}%</b></div><h2>{talk.title}</h2><p>{talk.location}</p><div className="ticket-numbers"><span><b>{talk.issued}</b><small>retirados</small></span><span><b>{remaining}</b><small>disponíveis</small></span><span><b>{talk.capacity}</b><small>capacidade</small></span></div><div className="progress-track"><span style={{ width: `${occupancy}%` }} /></div><small className="occupancy-note">{remaining === 0 ? "Lotação atingida" : remaining <= 15 ? "Últimos lugares disponíveis" : "Ingressos disponíveis"}</small></article>; })}</div>
+    </section>
+  );
+}
+
+function AdminPortal({
+  onExit,
+  talks,
+  bookings,
+  onCreateTalk,
+  onConfirmTraining,
+}: {
+  onExit: () => void;
+  talks: Talk[];
+  bookings: TrainingBooking[];
+  onCreateTalk: (talk: Omit<Talk, "id" | "issued">) => void;
+  onConfirmTraining: (bookingId: number) => void;
+}) {
+  const [authenticated, setAuthenticated] = useState(false);
+  const [view, setView] = useState<AdminView>("visao");
+  const [message, setMessage] = useState("");
+
+  function notify(value: string) {
+    setMessage(value);
+    window.setTimeout(() => setMessage(""), 5000);
+  }
+
+  if (!authenticated) return <AdminLogin onLogin={() => setAuthenticated(true)} onExit={onExit} />;
+
+  return (
+    <div className="admin-portal">
+      <div className="admin-shell">
+        <AdminSidebar view={view} onChange={setView} onExit={onExit} />
+        <main className="admin-main">
+          {view === "visao" && <AdminOverview talks={talks} bookings={bookings} onChange={setView} />}
+          {view === "palestras" && <AdminTalks talks={talks} onCreate={(talk) => { onCreateTalk(talk); notify("Palestra criada com sucesso."); }} />}
+          {view === "treinamentos" && <AdminTrainings bookings={bookings} onConfirm={(bookingId) => { onConfirmTraining(bookingId); notify("Treinamento confirmado."); }} />}
+          {view === "participantes" && <AdminTickets talks={talks} />}
+        </main>
+      </div>
+      <div className="live-message" role="status" aria-live="polite">{message}</div>
+    </div>
+  );
+}
+
 export function AptaApp() {
   const [portal, setPortal] = useState<Portal>("home");
+  const [talks, setTalks] = useState<Talk[]>(initialTalks);
+  const [reservedTalkIds, setReservedTalkIds] = useState<number[]>([]);
+  const [trainingBookings, setTrainingBookings] = useState<TrainingBooking[]>(initialTrainingBookings);
 
-  if (portal === "candidate") return <CandidatePortal onExit={() => setPortal("home")} />;
-  if (portal === "company") return <CompanyPortal onExit={() => setPortal("home")} />;
+  function reserveTicket(talkId: number) {
+    if (reservedTalkIds.includes(talkId)) return;
+    setTalks((current) => current.map((talk) => talk.id === talkId && talk.issued < talk.capacity ? { ...talk, issued: talk.issued + 1 } : talk));
+    setReservedTalkIds((current) => [...current, talkId]);
+  }
+
+  function createTalk(talk: Omit<Talk, "id" | "issued">) {
+    setTalks((current) => [{ ...talk, id: Math.max(0, ...current.map((item) => item.id)) + 1, issued: 0 }, ...current]);
+  }
+
+  function scheduleTraining(booking: Omit<TrainingBooking, "id" | "status">) {
+    setTrainingBookings((current) => [{ ...booking, id: Math.max(0, ...current.map((item) => item.id)) + 1, status: "Solicitado" }, ...current]);
+  }
+
+  function confirmTraining(bookingId: number) {
+    setTrainingBookings((current) => current.map((booking) => booking.id === bookingId ? { ...booking, status: "Confirmado" } : booking));
+  }
+
+  if (portal === "candidate") return <CandidatePortal onExit={() => setPortal("home")} talks={talks} reservedTalkIds={reservedTalkIds} onReserve={reserveTicket} />;
+  if (portal === "company") return <CompanyPortal onExit={() => setPortal("home")} bookings={trainingBookings} onScheduleTraining={scheduleTraining} />;
+  if (portal === "admin") return <AdminPortal onExit={() => setPortal("home")} talks={talks} bookings={trainingBookings} onCreateTalk={createTalk} onConfirmTraining={confirmTraining} />;
   return <Home onEnter={setPortal} />;
 }
