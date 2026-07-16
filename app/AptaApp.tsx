@@ -1,8 +1,10 @@
 "use client";
 
-import { FormEvent, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
-type Portal = "home" | "candidate" | "company" | "admin";
+type AccountPortal = "candidate" | "company" | "admin";
+type Portal = "auth" | AccountPortal;
+type AuthMode = "login" | "recover" | "register";
 type CandidateView = "inicio" | "perfil" | "questionario" | "curriculo" | "eventos";
 type CompanyView = "visao" | "talentos" | "consultoria" | "conteudos" | "empresa";
 type AdminView = "visao" | "palestras" | "treinamentos" | "participantes";
@@ -970,46 +972,187 @@ function CompanyPortal({
   );
 }
 
-function AdminLogin({ onLogin, onExit }: { onLogin: () => void; onExit: () => void }) {
+const demoAccounts: Array<{ email: string; password: string; portal: AccountPortal; label: string }> = [
+  { email: "candidato@apta.org.br", password: "apta123", portal: "candidate", label: "Candidato" },
+  { email: "empresa@apta.org.br", password: "apta123", portal: "company", label: "Empresa" },
+  { email: "admin@apta.org.br", password: "apta360", portal: "admin", label: "Administração" },
+];
+
+function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountPortal) => void }) {
+  const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [accountType, setAccountType] = useState<Exclude<AccountPortal, "admin">>("candidate");
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [fontScale, setFontScale] = useState(100);
+  const [highContrast, setHighContrast] = useState(false);
+  const titleRef = useRef<HTMLHeadingElement>(null);
 
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (email.trim().toLowerCase() === "admin@apta.org.br" && password === "apta360") {
-      setError("");
-      onLogin();
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, [mode]);
+
+  function changeMode(nextMode: AuthMode) {
+    setMode(nextMode);
+    setError("");
+    setMessage("");
+  }
+
+  function readPage() {
+    if (!("speechSynthesis" in window)) {
+      setMessage("A leitura em voz alta não está disponível neste navegador.");
       return;
     }
-    setError("E-mail ou senha incorretos. Use o acesso de demonstração indicado abaixo.");
+    window.speechSynthesis.cancel();
+    const text = document.querySelector("#auth-main")?.textContent ?? "";
+    const speech = new SpeechSynthesisUtterance(text.slice(0, 5000));
+    speech.lang = "pt-BR";
+    window.speechSynthesis.speak(speech);
+    setMessage("Leitura da página iniciada.");
+  }
+
+  function submitLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const account = demoAccounts.find((item) => item.email === email.trim().toLowerCase() && item.password === password);
+    if (!account) {
+      setError("E-mail ou senha incorretos. Confira os dados e tente novamente.");
+      return;
+    }
+    setError("");
+    onAuthenticated(account.portal);
+  }
+
+  function submitRecovery(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setMessage("Se existir uma conta com esse e-mail, enviaremos as instruções para redefinir a senha.");
+  }
+
+  function submitRegistration(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const newPassword = String(data.get("new-password") ?? "");
+    const passwordConfirmation = String(data.get("password-confirmation") ?? "");
+    if (newPassword.length < 8) {
+      setError("A senha deve ter pelo menos 8 caracteres.");
+      return;
+    }
+    if (newPassword !== passwordConfirmation) {
+      setError("As senhas informadas não são iguais.");
+      return;
+    }
+    setError("");
+    onAuthenticated(accountType);
+  }
+
+  function fillDemo(account: (typeof demoAccounts)[number]) {
+    setEmail(account.email);
+    setPassword(account.password);
+    setError("");
   }
 
   return (
-    <div className="admin-login-page">
-      <button className="admin-back" type="button" onClick={onExit}>← Voltar para o início</button>
-      <main className="admin-login-shell">
-        <section className="admin-login-brand">
+    <div className={`auth-page ${highContrast ? "auth-page--contrast" : ""}`} style={{ fontSize: `${fontScale}%` }}>
+      <a className="skip-link" href="#auth-card">Pular para o formulário de acesso</a>
+      <AccessibilityBar fontScale={fontScale} setFontScale={setFontScale} highContrast={highContrast} setHighContrast={setHighContrast} onRead={readPage} />
+      <main className="auth-shell" id="auth-main">
+        <section className="auth-intro" aria-labelledby="auth-intro-title">
           <Brand inverse />
-          <p className="eyebrow eyebrow--light">Central de gestão</p>
-          <h1>Organize experiências que geram inclusão.</h1>
-          <p>Cadastre palestras, acompanhe ingressos e confirme treinamentos solicitados pelas empresas.</p>
-          <div className="admin-feature-list"><span><b>01</b> Gestão de palestras</span><span><b>02</b> Controle de capacidade</span><span><b>03</b> Agenda de treinamentos</span></div>
+          <p className="eyebrow eyebrow--light">Talento não tem barreiras</p>
+          <h1 id="auth-intro-title">Um login.<br />A experiência certa para você.</h1>
+          <p>A APTA identifica sua conta com segurança e abre automaticamente a área de candidato, empresa ou administração.</p>
+          <div className="auth-benefits" aria-label="Benefícios da plataforma">
+            <span><b>01</b> Jornada acessível</span>
+            <span><b>02</b> Oportunidades reais</span>
+            <span><b>03</b> Inclusão contínua</span>
+          </div>
         </section>
-        <section className="admin-login-card" aria-labelledby="admin-login-title">
-          <span className="admin-lock" aria-hidden="true">A</span>
-          <p className="section-kicker">Acesso restrito</p>
-          <h2 id="admin-login-title">Entrar na administração</h2>
-          <p>Use suas credenciais administrativas para continuar.</p>
-          <form onSubmit={submit}>
-            <label>E-mail administrativo<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="username" required placeholder="admin@apta.org.br" /></label>
-            <label>Senha<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required placeholder="••••••••" /></label>
-            {error && <p className="login-error" role="alert">{error}</p>}
-            <button className="button button--primary button--full" type="submit">Entrar com segurança</button>
-          </form>
-          <div className="demo-credentials"><b>Acesso de demonstração</b><span>admin@apta.org.br</span><span>Senha: apta360</span></div>
+
+        <section className="auth-card" id="auth-card" aria-labelledby="auth-title">
+          <div className="auth-card-brand"><Brand /></div>
+
+          {mode === "login" && (
+            <>
+              <p className="section-kicker">Acesso unificado</p>
+              <h2 id="auth-title" ref={titleRef} tabIndex={-1}>Boas-vindas à APTA</h2>
+              <p className="auth-description">Entre com seus dados. O tipo da sua conta será identificado automaticamente.</p>
+              <form className="auth-form" onSubmit={submitLogin}>
+                <label htmlFor="login-email">E-mail</label>
+                <input id="login-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="username" inputMode="email" required placeholder="voce@exemplo.com.br" />
+                <div className="auth-label-row"><label htmlFor="login-password">Senha</label><button type="button" onClick={() => changeMode("recover")}>Esqueci minha senha</button></div>
+                <input id="login-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required placeholder="Digite sua senha" />
+                {error && <p className="login-error" role="alert">{error}</p>}
+                <button className="button button--primary button--full" type="submit">Entrar</button>
+              </form>
+              <div className="auth-divider"><span>ou</span></div>
+              <button className="button button--outline button--full" type="button" onClick={() => changeMode("register")}>Cadastrar-se</button>
+              <details className="auth-demo">
+                <summary>Acessos de demonstração</summary>
+                <div>
+                  {demoAccounts.map((account) => (
+                    <button type="button" key={account.portal} onClick={() => fillDemo(account)}>
+                      <span>{account.label}</span><small>{account.email}</small>
+                    </button>
+                  ))}
+                </div>
+              </details>
+            </>
+          )}
+
+          {mode === "recover" && (
+            <>
+              <button className="auth-back" type="button" onClick={() => changeMode("login")}>← Voltar para o login</button>
+              <p className="section-kicker">Recuperação de acesso</p>
+              <h2 id="auth-title" ref={titleRef} tabIndex={-1}>Redefina sua senha</h2>
+              <p className="auth-description">Informe o e-mail da conta para receber as instruções de recuperação.</p>
+              <form className="auth-form" onSubmit={submitRecovery}>
+                <label htmlFor="recovery-email">E-mail</label>
+                <input id="recovery-email" type="email" autoComplete="email" inputMode="email" required placeholder="voce@exemplo.com.br" />
+                <button className="button button--primary button--full" type="submit">Enviar instruções</button>
+              </form>
+              {message && <p className="auth-success" role="status">{message}</p>}
+            </>
+          )}
+
+          {mode === "register" && (
+            <>
+              <button className="auth-back" type="button" onClick={() => changeMode("login")}>← Voltar para o login</button>
+              <p className="section-kicker">Nova conta</p>
+              <h2 id="auth-title" ref={titleRef} tabIndex={-1}>Cadastre-se na APTA</h2>
+              <p className="auth-description">Escolha seu tipo de conta. Contas administrativas são criadas internamente.</p>
+              <form className="auth-form" onSubmit={submitRegistration}>
+                <fieldset className="account-type-fieldset">
+                  <legend>Tipo de conta</legend>
+                  <div className="account-type-options">
+                    <label className={accountType === "candidate" ? "selected" : ""}>
+                      <input type="radio" name="account-type" value="candidate" checked={accountType === "candidate"} onChange={() => setAccountType("candidate")} />
+                      <span><b>Pessoa com deficiência visual</b><small>Quero preparar meu perfil e encontrar oportunidades.</small></span>
+                    </label>
+                    <label className={accountType === "company" ? "selected" : ""}>
+                      <input type="radio" name="account-type" value="company" checked={accountType === "company"} onChange={() => setAccountType("company")} />
+                      <span><b>Empresa</b><small>Quero encontrar talentos e acessar serviços de inclusão.</small></span>
+                    </label>
+                  </div>
+                </fieldset>
+                <label htmlFor="register-name">{accountType === "company" ? "Nome do responsável" : "Nome completo"}</label>
+                <input id="register-name" name="name" autoComplete="name" required placeholder="Digite seu nome" />
+                <label htmlFor="register-email">E-mail</label>
+                <input id="register-email" name="email" type="email" autoComplete="email" inputMode="email" required placeholder="voce@exemplo.com.br" />
+                <label htmlFor="register-password">Senha</label>
+                <input id="register-password" name="new-password" type="password" autoComplete="new-password" minLength={8} required aria-describedby="password-help" placeholder="Crie uma senha" />
+                <small id="password-help" className="field-help">Use pelo menos 8 caracteres.</small>
+                <label htmlFor="register-confirmation">Confirme a senha</label>
+                <input id="register-confirmation" name="password-confirmation" type="password" autoComplete="new-password" minLength={8} required placeholder="Digite a senha novamente" />
+                <label className="terms-check"><input type="checkbox" required /><span>Li e aceito os Termos de Uso e a Política de Privacidade.</span></label>
+                {error && <p className="login-error" role="alert">{error}</p>}
+                <button className="button button--primary button--full" type="submit">Criar conta e continuar</button>
+              </form>
+            </>
+          )}
         </section>
       </main>
+      <div className="auth-live-message" role="status" aria-live="polite">{mode === "login" ? message : ""}</div>
     </div>
   );
 }
@@ -1126,7 +1269,6 @@ function AdminPortal({
   onCreateTalk: (talk: Omit<Talk, "id" | "issued">) => void;
   onConfirmTraining: (bookingId: number) => void;
 }) {
-  const [authenticated, setAuthenticated] = useState(false);
   const [view, setView] = useState<AdminView>("visao");
   const [message, setMessage] = useState("");
 
@@ -1134,8 +1276,6 @@ function AdminPortal({
     setMessage(value);
     window.setTimeout(() => setMessage(""), 5000);
   }
-
-  if (!authenticated) return <AdminLogin onLogin={() => setAuthenticated(true)} onExit={onExit} />;
 
   return (
     <div className="admin-portal">
@@ -1154,7 +1294,7 @@ function AdminPortal({
 }
 
 export function AptaApp() {
-  const [portal, setPortal] = useState<Portal>("home");
+  const [portal, setPortal] = useState<Portal>("auth");
   const [talks, setTalks] = useState<Talk[]>(initialTalks);
   const [reservedTalkIds, setReservedTalkIds] = useState<number[]>([]);
   const [trainingBookings, setTrainingBookings] = useState<TrainingBooking[]>(initialTrainingBookings);
@@ -1177,8 +1317,8 @@ export function AptaApp() {
     setTrainingBookings((current) => current.map((booking) => booking.id === bookingId ? { ...booking, status: "Confirmado" } : booking));
   }
 
-  if (portal === "candidate") return <CandidatePortal onExit={() => setPortal("home")} talks={talks} reservedTalkIds={reservedTalkIds} onReserve={reserveTicket} />;
-  if (portal === "company") return <CompanyPortal onExit={() => setPortal("home")} bookings={trainingBookings} onScheduleTraining={scheduleTraining} />;
-  if (portal === "admin") return <AdminPortal onExit={() => setPortal("home")} talks={talks} bookings={trainingBookings} onCreateTalk={createTalk} onConfirmTraining={confirmTraining} />;
-  return <Home onEnter={setPortal} />;
+  if (portal === "candidate") return <CandidatePortal onExit={() => setPortal("auth")} talks={talks} reservedTalkIds={reservedTalkIds} onReserve={reserveTicket} />;
+  if (portal === "company") return <CompanyPortal onExit={() => setPortal("auth")} bookings={trainingBookings} onScheduleTraining={scheduleTraining} />;
+  if (portal === "admin") return <AdminPortal onExit={() => setPortal("auth")} talks={talks} bookings={trainingBookings} onCreateTalk={createTalk} onConfirmTraining={confirmTraining} />;
+  return <UnifiedAccess onAuthenticated={setPortal} />;
 }
