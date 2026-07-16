@@ -141,7 +141,7 @@ Estado: **concluída**
 - [x] Direcionar a demonstração pelo tipo associado ao e-mail.
 - [x] Remover o segundo login exclusivo da administração.
 - [x] Garantir teclado, leitor de tela, contraste e layout responsivo.
-- [ ] Validar a versão publicada.
+- [x] Validar a versão publicada.
 
 Critério de aceite: os três tipos entram pela mesma tela e cadastro/recuperação
 possuem fluxos completos de interface, sem armazenar senha real no cliente.
@@ -267,4 +267,4 @@ Este bloco será atualizado ao final de cada etapa.
 | Data | Etapa | Resultado |
 | --- | --- | --- |
 | 16/07/2026 | Planejamento | Plano técnico e funcional criado. |
-| 16/07/2026 | Etapa 1 | Login unificado, cadastro, recuperação de senha e redirecionamento por tipo implementados; build validado. |
+| 16/07/2026 | Etapa 1 | Login unificado, cadastro, recuperação de senha e redirecionamento por tipo implementados; versão publicada e validada. |
