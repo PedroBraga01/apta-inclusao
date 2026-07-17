@@ -83,6 +83,21 @@ export const authTokens = sqliteTable(
   ],
 );
 
+export const loginAttempts = sqliteTable(
+  "login_attempts",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    emailHash: text("email_hash").notNull(),
+    succeeded: integer("succeeded", { mode: "boolean" }).notNull().default(false),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    index("login_attempts_email_time_idx").on(table.emailHash, table.createdAt),
+  ],
+);
+
 export const candidateProfiles = sqliteTable(
   "candidate_profiles",
   {

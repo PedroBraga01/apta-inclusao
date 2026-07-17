@@ -4,11 +4,20 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { AccessibilityBar, Brand, Marker } from "./apta/components";
 import {
+  confirmEmail,
+  finishPasswordReset,
+  getCurrentAccount,
+  loginAccount,
+  logoutAccount,
+  registerAccount,
+  requestPasswordReset,
+  rolePortal,
+} from "./apta/auth-api";
+import {
   adminNavigation,
   candidateNavigation,
   candidates,
   companyNavigation,
-  demoAccounts,
   initialTalks,
   initialTrainingBookings,
 } from "./apta/data";
@@ -680,6 +689,8 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
   const [accountType, setAccountType] = useState<Exclude<AccountPortal, "admin">>("candidate");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [pendingToken, setPendingToken] = useState("");
+  const [busy, setBusy] = useState(false);
   const [fontScale, setFontScale] = useState(100);
   const [highContrast, setHighContrast] = useState(false);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -692,6 +703,7 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
     setMode(nextMode);
     setError("");
     setMessage("");
+    setPendingToken("");
   }
 
   function readPage() {
@@ -707,24 +719,50 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
     setMessage("Leitura da página iniciada.");
   }
 
-  function submitLogin(event: FormEvent<HTMLFormElement>) {
+  async function submitLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const account = demoAccounts.find((item) => item.email === email.trim().toLowerCase() && item.password === password);
-    if (!account) {
-      setError("E-mail ou senha incorretos. Confira os dados e tente novamente.");
-      return;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await loginAccount(email, password);
+      onAuthenticated(rolePortal(result.user.role));
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Não foi possível entrar.",
+      );
+    } finally {
+      setBusy(false);
     }
-    setError("");
-    onAuthenticated(account.portal);
   }
 
-  function submitRecovery(event: FormEvent<HTMLFormElement>) {
+  async function submitRecovery(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const recoveryEmail = String(data.get("email") ?? "");
+    setBusy(true);
     setError("");
-    setMessage("Se existir uma conta com esse e-mail, enviaremos as instruções para redefinir a senha.");
+    try {
+      const result = await requestPasswordReset(recoveryEmail);
+      if (result.resetToken) {
+        setPendingToken(result.resetToken);
+        setMode("reset");
+      } else {
+        setMessage(result.message);
+      }
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Não foi possível solicitar a recuperação.",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function submitRegistration(event: FormEvent<HTMLFormElement>) {
+  async function submitRegistration(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const newPassword = String(data.get("new-password") ?? "");
@@ -737,14 +775,81 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
       setError("As senhas informadas não são iguais.");
       return;
     }
+    setBusy(true);
     setError("");
-    onAuthenticated(accountType);
+    try {
+      const registrationEmail = String(data.get("email") ?? "");
+      const result = await registerAccount({
+        email: registrationEmail,
+        password: newPassword,
+        name: String(data.get("name") ?? ""),
+        role: accountType === "candidate" ? "CANDIDATE" : "COMPANY",
+      });
+      setEmail(registrationEmail);
+      setPassword("");
+      setPendingToken(result.verificationToken ?? "");
+      setMessage(
+        result.verificationToken
+          ? "Conta criada. Confirme o e-mail para liberar o acesso."
+          : "Conta criada. Enviamos um link de confirmação para seu e-mail.",
+      );
+      setMode("verify");
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Não foi possível criar a conta.",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function fillDemo(account: (typeof demoAccounts)[number]) {
-    setEmail(account.email);
-    setPassword(account.password);
+  async function confirmPendingEmail() {
+    if (!pendingToken) return;
+    setBusy(true);
     setError("");
+    try {
+      await confirmEmail(pendingToken);
+      setPendingToken("");
+      setMode("login");
+      setMessage("E-mail confirmado. Entre com sua senha para continuar.");
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Não foi possível confirmar o e-mail.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitNewPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const newPassword = String(data.get("new-password") ?? "");
+    const confirmation = String(data.get("password-confirmation") ?? "");
+    if (newPassword !== confirmation) {
+      setError("As senhas informadas não são iguais.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const result = await finishPasswordReset(pendingToken, newPassword);
+      setPendingToken("");
+      setMode("login");
+      setMessage(result.message);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Não foi possível redefinir a senha.",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -778,20 +883,10 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
                 <div className="auth-label-row"><label htmlFor="login-password">Senha</label><button type="button" onClick={() => changeMode("recover")}>Esqueci minha senha</button></div>
                 <input id="login-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required placeholder="Digite sua senha" />
                 {error && <p className="login-error" role="alert">{error}</p>}
-                <button className="button button--primary button--full" type="submit">Entrar</button>
+                <button className="button button--primary button--full" type="submit" disabled={busy}>{busy ? "Entrando…" : "Entrar"}</button>
               </form>
               <div className="auth-divider"><span>ou</span></div>
               <button className="button button--outline button--full" type="button" onClick={() => changeMode("register")}>Cadastrar-se</button>
-              <details className="auth-demo">
-                <summary>Acessos de demonstração</summary>
-                <div>
-                  {demoAccounts.map((account) => (
-                    <button type="button" key={account.portal} onClick={() => fillDemo(account)}>
-                      <span>{account.label}</span><small>{account.email}</small>
-                    </button>
-                  ))}
-                </div>
-              </details>
             </>
           )}
 
@@ -803,8 +898,9 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
               <p className="auth-description">Informe o e-mail da conta para receber as instruções de recuperação.</p>
               <form className="auth-form" onSubmit={submitRecovery}>
                 <label htmlFor="recovery-email">E-mail</label>
-                <input id="recovery-email" type="email" autoComplete="email" inputMode="email" required placeholder="voce@exemplo.com.br" />
-                <button className="button button--primary button--full" type="submit">Enviar instruções</button>
+                <input id="recovery-email" name="email" type="email" autoComplete="email" inputMode="email" required placeholder="voce@exemplo.com.br" />
+                {error && <p className="login-error" role="alert">{error}</p>}
+                <button className="button button--primary button--full" type="submit" disabled={busy}>{busy ? "Enviando…" : "Enviar instruções"}</button>
               </form>
               {message && <p className="auth-success" role="status">{message}</p>}
             </>
@@ -841,7 +937,39 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
                 <input id="register-confirmation" name="password-confirmation" type="password" autoComplete="new-password" minLength={8} required placeholder="Digite a senha novamente" />
                 <label className="terms-check"><input type="checkbox" required /><span>Li e aceito os Termos de Uso e a Política de Privacidade.</span></label>
                 {error && <p className="login-error" role="alert">{error}</p>}
-                <button className="button button--primary button--full" type="submit">Criar conta e continuar</button>
+                <button className="button button--primary button--full" type="submit" disabled={busy}>{busy ? "Criando conta…" : "Criar conta e continuar"}</button>
+              </form>
+            </>
+          )}
+
+          {mode === "verify" && (
+            <>
+              <button className="auth-back" type="button" onClick={() => changeMode("login")}>← Voltar para o login</button>
+              <p className="section-kicker">Confirmação de e-mail</p>
+              <h2 id="auth-title" ref={titleRef} tabIndex={-1}>Confirme sua conta</h2>
+              <p className="auth-description">{message}</p>
+              {pendingToken && (
+                <button className="button button--primary button--full" type="button" onClick={confirmPendingEmail} disabled={busy}>
+                  {busy ? "Confirmando…" : "Confirmar e-mail de desenvolvimento"}
+                </button>
+              )}
+              {error && <p className="login-error" role="alert">{error}</p>}
+            </>
+          )}
+
+          {mode === "reset" && (
+            <>
+              <button className="auth-back" type="button" onClick={() => changeMode("login")}>← Voltar para o login</button>
+              <p className="section-kicker">Nova senha</p>
+              <h2 id="auth-title" ref={titleRef} tabIndex={-1}>Crie uma nova senha</h2>
+              <p className="auth-description">Escolha uma senha com pelo menos 8 caracteres.</p>
+              <form className="auth-form" onSubmit={submitNewPassword}>
+                <label htmlFor="reset-password">Nova senha</label>
+                <input id="reset-password" name="new-password" type="password" autoComplete="new-password" minLength={8} required />
+                <label htmlFor="reset-confirmation">Confirme a nova senha</label>
+                <input id="reset-confirmation" name="password-confirmation" type="password" autoComplete="new-password" minLength={8} required />
+                {error && <p className="login-error" role="alert">{error}</p>}
+                <button className="button button--primary button--full" type="submit" disabled={busy}>{busy ? "Salvando…" : "Redefinir senha"}</button>
               </form>
             </>
           )}
@@ -987,6 +1115,28 @@ export function AptaApp() {
   const [reservedTalkIds, setReservedTalkIds] = useState<number[]>([]);
   const [trainingBookings, setTrainingBookings] = useState<TrainingBooking[]>(initialTrainingBookings);
 
+  useEffect(() => {
+    let active = true;
+    getCurrentAccount()
+      .then(({ user }) => {
+        if (active) setPortal(rolePortal(user.role));
+      })
+      .catch(() => {
+        // Anonymous access is the expected initial state.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function exitAccount() {
+    try {
+      await logoutAccount();
+    } finally {
+      setPortal("auth");
+    }
+  }
+
   function reserveTicket(talkId: number) {
     if (reservedTalkIds.includes(talkId)) return;
     setTalks((current) => current.map((talk) => talk.id === talkId && talk.issued < talk.capacity ? { ...talk, issued: talk.issued + 1 } : talk));
@@ -1005,8 +1155,8 @@ export function AptaApp() {
     setTrainingBookings((current) => current.map((booking) => booking.id === bookingId ? { ...booking, status: "Confirmado" } : booking));
   }
 
-  if (portal === "candidate") return <CandidatePortal onExit={() => setPortal("auth")} talks={talks} reservedTalkIds={reservedTalkIds} onReserve={reserveTicket} />;
-  if (portal === "company") return <CompanyPortal onExit={() => setPortal("auth")} bookings={trainingBookings} onScheduleTraining={scheduleTraining} />;
-  if (portal === "admin") return <AdminPortal onExit={() => setPortal("auth")} talks={talks} bookings={trainingBookings} onCreateTalk={createTalk} onConfirmTraining={confirmTraining} />;
+  if (portal === "candidate") return <CandidatePortal onExit={() => void exitAccount()} talks={talks} reservedTalkIds={reservedTalkIds} onReserve={reserveTicket} />;
+  if (portal === "company") return <CompanyPortal onExit={() => void exitAccount()} bookings={trainingBookings} onScheduleTraining={scheduleTraining} />;
+  if (portal === "admin") return <AdminPortal onExit={() => void exitAccount()} talks={talks} bookings={trainingBookings} onCreateTalk={createTalk} onConfirmTraining={confirmTraining} />;
   return <UnifiedAccess onAuthenticated={setPortal} />;
 }

@@ -6,14 +6,14 @@ para candidatos, empresas e para a administração da APTA.
 
 ## Estado atual
 
-O repositório contém uma demonstração navegável e responsiva dos três portais.
-Os fluxos ainda usam dados locais e serão substituídos progressivamente por API,
-autenticação real, banco de dados e armazenamento privado.
+O repositório contém uma aplicação navegável e responsiva dos três portais. A
+autenticação, as sessões e o modelo relacional já possuem base de servidor; os
+demais domínios ainda serão substituídos progressivamente por operações da API.
 
 Já disponível na demonstração:
 
 - acesso unificado para candidato, empresa e administração;
-- cadastro e recuperação de senha em modo demonstrativo;
+- cadastro, confirmação de e-mail, sessão e recuperação pela API;
 - perfil, questionário, currículo e palestras do candidato;
 - busca de talentos, consultoria e treinamentos da empresa;
 - gestão de palestras, ingressos e treinamentos pela administração;
@@ -56,10 +56,12 @@ As próximas entregas incluem:
 
 ```bash
 npm ci
+npm run db:migrate:local
 npm run dev
 ```
 
-O endereço local é informado pelo servidor de desenvolvimento.
+O comando de migração prepara o D1 local antes da primeira execução. O endereço
+da aplicação é informado pelo servidor de desenvolvimento.
 
 ## Verificações
 
@@ -69,26 +71,14 @@ npm test
 npm run build
 ```
 
-`npm test` gera o build e valida o HTML renderizado da tela de acesso da APTA.
-
-## Acessos demonstrativos
-
-Enquanto a autenticação real não estiver implementada, a própria tela de login
-oferece três contas de demonstração:
-
-| Perfil | E-mail | Senha |
-| --- | --- | --- |
-| Candidato | `candidato@apta.org.br` | `apta123` |
-| Empresa | `empresa@apta.org.br` | `apta123` |
-| Administração | `admin@apta.org.br` | `apta360` |
-
-Essas credenciais são apenas dados públicos de demonstração e não representam
-contas reais.
+`npm test` gera o build e valida autenticação, cookies, metadados e a tela de
+acesso renderizada da APTA.
 
 ## Estrutura principal
 
 - `app/`: páginas, componentes e estilos da aplicação;
 - `db/`: conexão e esquema do banco;
+- `server/`: autenticação, segurança e regras executadas no servidor;
 - `worker/`: entrada da aplicação no Cloudflare Worker;
 - `tests/`: testes automatizados;
 - `public/`: imagens e arquivos públicos;

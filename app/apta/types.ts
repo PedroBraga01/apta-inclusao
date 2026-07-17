@@ -1,6 +1,6 @@
 export type AccountPortal = "candidate" | "company" | "admin";
 export type Portal = "auth" | AccountPortal;
-export type AuthMode = "login" | "recover" | "register";
+export type AuthMode = "login" | "recover" | "register" | "verify" | "reset";
 export type CandidateView =
   | "inicio"
   | "perfil"
