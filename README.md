@@ -14,6 +14,8 @@ Já disponível na demonstração:
 
 - acesso unificado para candidato, empresa e administração;
 - cadastro, confirmação de e-mail, sessão e recuperação pela API;
+- perfil e consentimentos persistentes do candidato;
+- currículo privado armazenado no R2;
 - perfil, questionário, currículo e palestras do candidato;
 - busca de talentos, consultoria e treinamentos da empresa;
 - gestão de palestras, ingressos e treinamentos pela administração;

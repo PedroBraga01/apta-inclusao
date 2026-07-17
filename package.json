@@ -11,7 +11,7 @@
     "build": "vinext build",
     "start": "vinext start",
     "test": "npm run build && npm run test:unit",
-    "test:unit": "tsx --test tests/auth.test.ts tests/rendered-html.test.tsx",
+    "test:unit": "tsx --test tests/auth.test.ts tests/candidate.test.ts tests/rendered-html.test.tsx",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply DB --local --config wrangler.local.jsonc"

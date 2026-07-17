@@ -14,6 +14,18 @@ import {
   rolePortal,
 } from "./apta/auth-api";
 import {
+  loadCandidateConsents,
+  loadCandidateProfile,
+  loadResume,
+  removeResume,
+  saveCandidateConsent,
+  saveCandidateProfile,
+  sendResume,
+  type CandidateConsentData,
+  type CandidateProfileData,
+  type ResumeData,
+} from "./apta/candidate-api";
+import {
   adminNavigation,
   candidateNavigation,
   candidates,
@@ -143,10 +155,64 @@ function CandidateHome({ onChange }: { onChange: (view: CandidateView) => void }
 }
 
 function CandidateProfile({ onSaved }: { onSaved: (message: string) => void }) {
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    onSaved("Perfil atualizado com sucesso.");
+  const [profile, setProfile] = useState<CandidateProfileData | null>(null);
+  const [accountEmail, setAccountEmail] = useState("");
+  const [consents, setConsents] = useState<CandidateConsentData[]>([]);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    Promise.all([loadCandidateProfile(), loadCandidateConsents()])
+      .then(([profileResult, consentResult]) => {
+        setProfile(profileResult.profile);
+        setAccountEmail(profileResult.email);
+        setConsents(consentResult.consents);
+      })
+      .catch((loadError) =>
+        setError(loadError instanceof Error ? loadError.message : "Não foi possível carregar o perfil."),
+      );
+  }, []);
+
+  function latestConsent(type: CandidateConsentData["type"]): boolean {
+    return consents.find((consent) => consent.type === type)?.granted ?? false;
   }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    setBusy(true);
+    setError("");
+    try {
+      const result = await saveCandidateProfile({
+        fullName: data.get("fullName"),
+        phone: data.get("phone"),
+        city: data.get("city"),
+        state: data.get("state"),
+        education: data.get("education"),
+        area: data.get("area"),
+        experience: data.get("experience"),
+        workMode: data.get("workMode"),
+      });
+      setProfile(result.profile);
+      const profileSharing = data.get("profileSharing") === "on";
+      const communications = data.get("communications") === "on";
+      if (profileSharing !== latestConsent("PROFILE_SHARING")) {
+        const consentResult = await saveCandidateConsent("PROFILE_SHARING", profileSharing);
+        setConsents(consentResult.consents);
+      }
+      if (communications !== latestConsent("COMMUNICATIONS")) {
+        const consentResult = await saveCandidateConsent("COMMUNICATIONS", communications);
+        setConsents(consentResult.consents);
+      }
+      onSaved(`Perfil atualizado. Preenchimento: ${result.profile.profileProgress}%.`);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Não foi possível salvar o perfil.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!profile && !error) return <p role="status">Carregando perfil…</p>;
 
   return (
     <section className="form-page" aria-labelledby="profile-title">
@@ -155,23 +221,34 @@ function CandidateProfile({ onSaved }: { onSaved: (message: string) => void }) {
         <h1 id="profile-title">Suas informações</h1>
         <p>Mantenha seus dados atualizados para que as empresas possam entrar em contato.</p>
       </header>
+      {error && <p className="login-error" role="alert">{error}</p>}
+      {profile && (
       <form className="accessible-form" onSubmit={submit}>
         <fieldset>
           <legend>Informações de contato</legend>
           <div className="form-grid">
-            <label>Nome completo<input type="text" defaultValue="Marina Costa" autoComplete="name" /></label>
-            <label>E-mail<input type="email" defaultValue="marina.costa@email.com" autoComplete="email" /></label>
-            <label>Telefone<input type="tel" defaultValue="(11) 98765-4321" autoComplete="tel" /></label>
-            <label>Localidade<input type="text" defaultValue="São Paulo, SP" autoComplete="address-level2" /></label>
+            <label>Nome completo<input name="fullName" type="text" defaultValue={profile.fullName} autoComplete="name" required /></label>
+            <label>E-mail da conta<input type="email" value={accountEmail} disabled /></label>
+            <label>Telefone<input name="phone" type="tel" defaultValue={profile.phone ?? ""} autoComplete="tel" /></label>
+            <label>Cidade<input name="city" type="text" defaultValue={profile.city ?? ""} autoComplete="address-level2" /></label>
+            <label>Estado<input name="state" type="text" defaultValue={profile.state ?? ""} autoComplete="address-level1" /></label>
+            <label>Formação<input name="education" type="text" defaultValue={profile.education ?? ""} /></label>
           </div>
         </fieldset>
         <fieldset>
           <legend>Resumo profissional</legend>
-          <label>Área de interesse<select defaultValue="Administrativo"><option>Administrativo</option><option>Atendimento</option><option>Design</option><option>Tecnologia</option></select></label>
-          <label>Conte um pouco sobre sua experiência<textarea defaultValue="Tenho experiência com atendimento, organização de documentos e rotinas administrativas. Busco uma oportunidade em um ambiente inclusivo e colaborativo." rows={5} /></label>
+          <label>Área de interesse<select name="area" defaultValue={profile.area ?? "Administrativo"}><option>Administrativo</option><option>Atendimento</option><option>Design</option><option>Tecnologia</option></select></label>
+          <label>Modalidade preferida<select name="workMode" defaultValue={profile.workMode ?? "Remoto"}><option>Remoto</option><option>Híbrido</option><option>Presencial</option><option>Sem preferência</option></select></label>
+          <label>Conte um pouco sobre sua experiência<textarea name="experience" defaultValue={profile.experience ?? ""} rows={5} /></label>
         </fieldset>
-        <div className="form-actions"><button className="button button--primary" type="submit">Salvar alterações</button></div>
+        <fieldset>
+          <legend>Privacidade e comunicações</legend>
+          <label className="choice-card choice-card--single"><input name="profileSharing" type="checkbox" defaultChecked={latestConsent("PROFILE_SHARING")} /><span><b>Permitir que empresas encontrem meu perfil</b><small>Você pode revogar esta autorização a qualquer momento.</small></span></label>
+          <label className="choice-card choice-card--single"><input name="communications" type="checkbox" defaultChecked={latestConsent("COMMUNICATIONS")} /><span><b>Receber comunicações da APTA</b><small>Avisos sobre oportunidades, treinamentos e palestras.</small></span></label>
+        </fieldset>
+        <div className="form-actions"><button className="button button--primary" type="submit" disabled={busy}>{busy ? "Salvando…" : "Salvar alterações"}</button></div>
       </form>
+      )}
     </section>
   );
 }
@@ -232,12 +309,63 @@ function CandidateQuestionnaire({ onSaved }: { onSaved: (message: string) => voi
 }
 
 function CandidateResume({ onSaved }: { onSaved: (message: string) => void }) {
-  const [fileName, setFileName] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [resume, setResume] = useState<ResumeData | null>(null);
+  const [resumeSharing, setResumeSharing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    Promise.all([loadResume(), loadCandidateConsents()])
+      .then(([resumeResult, consentResult]) => {
+        setResume(resumeResult.resume);
+        setResumeSharing(
+          consentResult.consents.find((item) => item.type === "RESUME_SHARING")
+            ?.granted ?? false,
+        );
+      })
+      .catch((loadError) =>
+        setError(loadError instanceof Error ? loadError.message : "Não foi possível carregar o currículo."),
+      );
+  }, []);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    onSaved(fileName ? `Currículo ${fileName} adicionado ao seu perfil.` : "Informações de contato salvas.");
+    if (!selectedFile && !resume) {
+      setError("Selecione um currículo para continuar.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      if (selectedFile) {
+        const result = await sendResume(selectedFile);
+        setResume(result.resume);
+        setSelectedFile(null);
+      }
+      await saveCandidateConsent("RESUME_SHARING", resumeSharing);
+      onSaved("Currículo e autorização atualizados com sucesso.");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Não foi possível salvar o currículo.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeCurrentResume() {
+    setBusy(true);
+    setError("");
+    try {
+      await removeResume();
+      setResume(null);
+      setSelectedFile(null);
+      onSaved("Currículo excluído com sucesso.");
+    } catch (removeError) {
+      setError(removeError instanceof Error ? removeError.message : "Não foi possível excluir o currículo.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -252,28 +380,30 @@ function CandidateResume({ onSaved }: { onSaved: (message: string) => void }) {
           <legend>Arquivo do currículo</legend>
           <div className="upload-zone" onClick={() => fileRef.current?.click()}>
             <span className="upload-symbol" aria-hidden="true">↑</span>
-            <h2>{fileName || "Selecione seu currículo"}</h2>
+            <h2>{selectedFile?.name || resume?.originalName || "Selecione seu currículo"}</h2>
             <p>Formatos aceitos: PDF, DOC ou DOCX. Tamanho máximo de 10 MB.</p>
             <input
               ref={fileRef}
               type="file"
               accept=".pdf,.doc,.docx,application/pdf"
-              onChange={(event) => setFileName(event.target.files?.[0]?.name ?? "")}
+              onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
               aria-label="Selecionar arquivo de currículo"
             />
             <button className="button button--outline" type="button" onClick={(event) => { event.stopPropagation(); fileRef.current?.click(); }}>Escolher arquivo</button>
           </div>
-          {fileName && <p className="file-confirmation"><span aria-hidden="true">✓</span> Arquivo selecionado: <b>{fileName}</b></p>}
+          {selectedFile && <p className="file-confirmation"><span aria-hidden="true">✓</span> Arquivo selecionado: <b>{selectedFile.name}</b></p>}
+          {resume && !selectedFile && <p className="file-confirmation"><span aria-hidden="true">✓</span> Currículo atual: <b>{resume.originalName}</b> ({Math.ceil(resume.sizeBytes / 1024)} KB)</p>}
         </fieldset>
         <fieldset>
-          <legend>Contato preferencial</legend>
-          <div className="form-grid">
-            <label>E-mail<input type="email" defaultValue="marina.costa@email.com" /></label>
-            <label>Telefone<input type="tel" defaultValue="(11) 98765-4321" /></label>
-          </div>
-          <label className="choice-card choice-card--single"><input type="checkbox" defaultChecked /><span><b>Autorizo o contato de empresas</b><small>Empresas poderão acessar os dados acima após demonstrar interesse.</small></span></label>
+          <legend>Autorização de acesso</legend>
+          <label className="choice-card choice-card--single"><input type="checkbox" checked={resumeSharing} onChange={(event) => setResumeSharing(event.target.checked)} /><span><b>Autorizar acesso temporário ao currículo</b><small>Somente empresas permitidas poderão solicitar o documento.</small></span></label>
         </fieldset>
-        <div className="form-actions"><button className="button button--primary" type="submit">Salvar currículo e contato</button></div>
+        {error && <p className="login-error" role="alert">{error}</p>}
+        <div className="form-actions">
+          {resume && <a className="button button--outline" href="/api/candidate/resume/download">Baixar currículo</a>}
+          {resume && <button className="button button--outline" type="button" onClick={() => void removeCurrentResume()} disabled={busy}>Excluir currículo</button>}
+          <button className="button button--primary" type="submit" disabled={busy}>{busy ? "Salvando…" : "Salvar currículo"}</button>
+        </div>
       </form>
     </section>
   );
