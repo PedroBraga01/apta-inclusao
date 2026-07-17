@@ -1,98 +1,101 @@
-# vinext-starter
+# APTA — Talento não tem barreiras
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+Plataforma web acessível que conecta profissionais com deficiência visual a
+empresas comprometidas com inclusão. A aplicação reúne jornadas específicas
+para candidatos, empresas e para a administração da APTA.
 
-## Prerequisites
+## Estado atual
 
-- Node.js `>=22.13.0`
+O repositório contém uma demonstração navegável e responsiva dos três portais.
+Os fluxos ainda usam dados locais e serão substituídos progressivamente por API,
+autenticação real, banco de dados e armazenamento privado.
 
-## Quick Start
+Já disponível na demonstração:
+
+- acesso unificado para candidato, empresa e administração;
+- cadastro e recuperação de senha em modo demonstrativo;
+- perfil, questionário, currículo e palestras do candidato;
+- busca de talentos, consultoria e treinamentos da empresa;
+- gestão de palestras, ingressos e treinamentos pela administração;
+- navegação por teclado, alto contraste, ampliação de texto e regiões de anúncio;
+- layout adaptado para celular, tablet e computador.
+
+O plano completo está em [PLANO_EXECUCAO_MOBILE.md](./PLANO_EXECUCAO_MOBILE.md).
+
+## Direção do produto
+
+A APTA será uma única aplicação web mobile-first e instalável como PWA. Não há
+aplicativo nativo separado: a mesma interface responsiva atenderá Android, iOS,
+tablets e computadores.
+
+As próximas entregas incluem:
+
+- autenticação e permissões reais;
+- persistência de perfis e consentimentos;
+- armazenamento privado de currículos;
+- questionários com progresso salvo;
+- busca autorizada de candidatos e solicitações de contato;
+- treinamentos, consultorias, planos, palestras e ingressos;
+- pagamentos, notificações, recursos de PWA e requisitos de LGPD.
+
+## Tecnologias
+
+- React 19 e Next.js 16;
+- TypeScript;
+- Vinext e Vite;
+- Cloudflare Workers para a execução publicada;
+- Drizzle ORM para acesso ao banco;
+- Tailwind CSS e estilos próprios.
+
+## Requisitos
+
+- Node.js 22.13 ou superior;
+- npm 11 ou superior.
+
+## Executar localmente
 
 ```bash
-npm install
+npm ci
 npm run dev
+```
+
+O endereço local é informado pelo servidor de desenvolvimento.
+
+## Verificações
+
+```bash
+npm run lint
+npm test
 npm run build
 ```
 
-This starter does not use `wrangler.jsonc`.
+`npm test` gera o build e valida o HTML renderizado da tela de acesso da APTA.
 
-## Included Shape
+## Acessos demonstrativos
 
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
+Enquanto a autenticação real não estiver implementada, a própria tela de login
+oferece três contas de demonstração:
 
-## Workspace Auth Headers
+| Perfil | E-mail | Senha |
+| --- | --- | --- |
+| Candidato | `candidato@apta.org.br` | `apta123` |
+| Empresa | `empresa@apta.org.br` | `apta123` |
+| Administração | `admin@apta.org.br` | `apta360` |
 
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
+Essas credenciais são apenas dados públicos de demonstração e não representam
+contas reais.
 
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
+## Estrutura principal
 
-Treat the full name as optional and fall back to email when it is absent:
+- `app/`: páginas, componentes e estilos da aplicação;
+- `db/`: conexão e esquema do banco;
+- `worker/`: entrada da aplicação no Cloudflare Worker;
+- `tests/`: testes automatizados;
+- `public/`: imagens e arquivos públicos;
+- `.openai/hosting.json`: configuração da hospedagem atual.
 
-```tsx
-import { headers } from "next/headers";
+## Segurança
 
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
-```
-
-## Optional Dispatch-Owned ChatGPT Sign-In
-
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
-
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
-
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
-
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Useful Commands
-
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+Não adicione segredos ao repositório. Arquivos `.env*`, bancos locais, artefatos
+de build e estado do Wrangler permanecem ignorados pelo Git. Credenciais reais
+serão configuradas somente nos ambientes apropriados.

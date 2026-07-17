@@ -1,7 +1,8 @@
 {
-  "name": "site-creator-vinext-starter",
+  "name": "apta-inclusao",
   "version": "0.1.0",
   "private": true,
+  "description": "Plataforma web acessível de inclusão profissional da APTA",
   "engines": {
     "node": ">=22.13.0"
   },
