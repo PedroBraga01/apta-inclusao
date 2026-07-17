@@ -15,7 +15,13 @@ export function getSessionToken(request: Request): string | null {
 }
 
 function secureAttribute(request: Request): string {
-  return new URL(request.url).protocol === "https:" ? "; Secure" : "";
+  const forwardedProtocol = request.headers
+    .get("x-forwarded-proto")
+    ?.split(",")[0]
+    ?.trim();
+  return new URL(request.url).protocol === "https:" || forwardedProtocol === "https"
+    ? "; Secure"
+    : "";
 }
 
 export function sessionCookie(request: Request, token: string): string {

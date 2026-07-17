@@ -1,17 +1,28 @@
 import { sql } from "drizzle-orm";
 import {
+  boolean,
+  customType,
   index,
   integer,
+  jsonb,
+  pgTable as sqliteTable,
   primaryKey,
-  sqliteTable,
   text,
   uniqueIndex,
-} from "drizzle-orm/sqlite-core";
+} from "drizzle-orm/pg-core";
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType() {
+    return "bytea";
+  },
+});
+
+const isoTimestampDefault = sql`to_char(timezone('UTC', current_timestamp), 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`;
 
 const createdAt = () =>
-  text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`);
+  text("created_at").notNull().default(isoTimestampDefault);
 const updatedAt = () =>
-  text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`);
+  text("updated_at").notNull().default(isoTimestampDefault);
 
 export const users = sqliteTable(
   "users",
@@ -90,7 +101,7 @@ export const loginAttempts = sqliteTable(
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
     emailHash: text("email_hash").notNull(),
-    succeeded: integer("succeeded", { mode: "boolean" }).notNull().default(false),
+    succeeded: boolean("succeeded").notNull().default(false),
     createdAt: createdAt(),
   },
   (table) => [
@@ -113,14 +124,12 @@ export const candidateProfiles = sqliteTable(
     experience: text("experience"),
     workMode: text("work_mode"),
     disability: text("disability"),
-    skills: text("skills", { mode: "json" }).$type<string[]>().default([]),
-    accessibilityResources: text("accessibility_resources", {
-      mode: "json",
-    })
+    skills: jsonb("skills").$type<string[]>().default([]),
+    accessibilityResources: jsonb("accessibility_resources")
       .$type<string[]>()
       .default([]),
     profileProgress: integer("profile_progress").notNull().default(0),
-    sharingEnabled: integer("sharing_enabled", { mode: "boolean" })
+    sharingEnabled: boolean("sharing_enabled")
       .notNull()
       .default(false),
     createdAt: createdAt(),
@@ -163,8 +172,8 @@ export const consents = sqliteTable(
     }).notNull(),
     version: text("version").notNull(),
     purpose: text("purpose").notNull(),
-    granted: integer("granted", { mode: "boolean" }).notNull(),
-    recordedAt: text("recorded_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    granted: boolean("granted").notNull(),
+    recordedAt: text("recorded_at").notNull().default(isoTimestampDefault),
     revokedAt: text("revoked_at"),
   },
   (table) => [index("consents_candidate_type_idx").on(table.candidateId, table.type)],
@@ -179,10 +188,10 @@ export const resumes = sqliteTable(
     candidateId: text("candidate_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    objectKey: text("object_key").notNull(),
     originalName: text("original_name").notNull(),
     mimeType: text("mime_type").notNull(),
     sizeBytes: integer("size_bytes").notNull(),
+    content: bytea("content"),
     status: text("status", { enum: ["ACTIVE", "REPLACED", "DELETED"] })
       .notNull()
       .default("ACTIVE"),
@@ -190,7 +199,6 @@ export const resumes = sqliteTable(
     deletedAt: text("deleted_at"),
   },
   (table) => [
-    uniqueIndex("resumes_object_key_unique").on(table.objectKey),
     index("resumes_candidate_status_idx").on(table.candidateId, table.status),
   ],
 );
@@ -226,8 +234,8 @@ export const questions = sqliteTable(
     type: text("type", {
       enum: ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TEXT"],
     }).notNull(),
-    options: text("options", { mode: "json" }).$type<string[]>().default([]),
-    required: integer("required", { mode: "boolean" }).notNull().default(true),
+    options: jsonb("options").$type<string[]>().default([]),
+    required: boolean("required").notNull().default(true),
     position: integer("position").notNull(),
   },
   (table) => [
@@ -253,7 +261,7 @@ export const questionnaireAnswers = sqliteTable(
     questionId: text("question_id")
       .notNull()
       .references(() => questions.id, { onDelete: "cascade" }),
-    value: text("value", { mode: "json" }).$type<string | string[]>().notNull(),
+    value: jsonb("value").$type<string | string[]>().notNull(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -382,7 +390,7 @@ export const tickets = sqliteTable(
     status: text("status", { enum: ["VALID", "USED", "CANCELLED"] })
       .notNull()
       .default("VALID"),
-    issuedAt: text("issued_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    issuedAt: text("issued_at").notNull().default(isoTimestampDefault),
     usedAt: text("used_at"),
   },
   (table) => [uniqueIndex("tickets_code_unique").on(table.code)],
@@ -450,8 +458,8 @@ export const plans = sqliteTable("plans", {
     .$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
   description: text("description").notNull(),
-  benefits: text("benefits", { mode: "json" }).$type<string[]>().default([]),
-  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  benefits: jsonb("benefits").$type<string[]>().default([]),
+  active: boolean("active").notNull().default(true),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
@@ -542,7 +550,7 @@ export const auditLogs = sqliteTable(
     action: text("action").notNull(),
     entityType: text("entity_type").notNull(),
     entityId: text("entity_id"),
-    metadata: text("metadata", { mode: "json" }).$type<Record<string, unknown>>(),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
     ipHash: text("ip_hash"),
     createdAt: createdAt(),
   },

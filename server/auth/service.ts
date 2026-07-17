@@ -1,4 +1,4 @@
-import { and, count, eq, gt, isNull, sql } from "drizzle-orm";
+import { and, count, eq, gt, isNull } from "drizzle-orm";
 import { getDb } from "../../db";
 import {
   authTokens,
@@ -21,7 +21,9 @@ export type PublicUser = {
   status: UserRow["status"];
 };
 
-function publicUser(user: UserRow): PublicUser {
+function publicUser(
+  user: Pick<UserRow, "id" | "email" | "role" | "status">,
+): PublicUser {
   return {
     id: user.id,
     email: user.email,
@@ -32,6 +34,15 @@ function publicUser(user: UserRow): PublicUser {
 
 function expiresIn(seconds: number): string {
   return new Date(Date.now() + seconds * 1000).toISOString();
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "23505"
+  );
 }
 
 export async function registerAccount(input: {
@@ -62,28 +73,30 @@ export async function registerAccount(input: {
     status: "PENDING",
   };
 
-  const userStatement = db.insert(users).values(userValues);
-  const profileStatement =
-    input.role === "CANDIDATE"
-      ? db.insert(candidateProfiles).values({ userId, fullName: input.name })
-      : db.insert(companyProfiles).values({
+  try {
+    await db.transaction(async (transaction) => {
+      await transaction.insert(users).values(userValues);
+      if (input.role === "CANDIDATE") {
+        await transaction
+          .insert(candidateProfiles)
+          .values({ userId, fullName: input.name });
+      } else {
+        await transaction.insert(companyProfiles).values({
           userId,
           legalName: input.name,
           contactName: input.name,
           contactEmail: input.email,
         });
-  const tokenStatement = db.insert(authTokens).values({
-    userId,
-    purpose: "VERIFY_EMAIL",
-    tokenHash: verificationTokenHash,
-    expiresAt: expiresIn(60 * 60 * 24),
-  });
-
-  try {
-    await db.batch([userStatement, profileStatement, tokenStatement]);
+      }
+      await transaction.insert(authTokens).values({
+        userId,
+        purpose: "VERIFY_EMAIL",
+        tokenHash: verificationTokenHash,
+        expiresAt: expiresIn(60 * 60 * 24),
+      });
+    });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "";
-    if (message.includes("UNIQUE") || message.includes("users.email")) {
+    if (isUniqueViolation(error)) {
       throw new AuthError("EMAIL_IN_USE", "Já existe uma conta com esse e-mail.", 409);
     }
     throw error;
@@ -91,11 +104,10 @@ export async function registerAccount(input: {
 
   return {
     user: publicUser({
-      ...userValues,
-      emailVerifiedAt: null,
-      lastAccessAt: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      id: userId,
+      email: input.email,
+      role: input.role,
+      status: "PENDING",
     }),
     verificationToken,
   };
@@ -121,13 +133,16 @@ export async function verifyEmail(token: string): Promise<PublicUser> {
     throw new AuthError("INVALID_TOKEN", "O link de confirmação é inválido ou expirou.", 400);
   }
 
-  await db.batch([
-    db.update(authTokens).set({ usedAt: now }).where(eq(authTokens.id, record.id)),
-    db
+  await db.transaction(async (transaction) => {
+    await transaction
+      .update(authTokens)
+      .set({ usedAt: now })
+      .where(eq(authTokens.id, record.id));
+    await transaction
       .update(users)
       .set({ status: "ACTIVE", emailVerifiedAt: now, updatedAt: now })
-      .where(eq(users.id, record.userId)),
-  ]);
+      .where(eq(users.id, record.userId));
+  });
   const [user] = await db.select().from(users).where(eq(users.id, record.userId)).limit(1);
   if (!user) {
     throw new AuthError("INVALID_TOKEN", "A conta não está mais disponível.", 400);
@@ -162,14 +177,17 @@ export async function authenticate(input: {
   const sessionToken = createRandomToken();
   const tokenHash = await hashToken(sessionToken);
   const now = new Date().toISOString();
-  await db.batch([
-    db.insert(sessions).values({
+  await db.transaction(async (transaction) => {
+    await transaction.insert(sessions).values({
       userId: user.id,
       tokenHash,
       expiresAt: expiresIn(SESSION_DURATION_SECONDS),
-    }),
-    db.update(users).set({ lastAccessAt: now, updatedAt: now }).where(eq(users.id, user.id)),
-  ]);
+    });
+    await transaction
+      .update(users)
+      .set({ lastAccessAt: now, updatedAt: now })
+      .where(eq(users.id, user.id));
+  });
   return { user: publicUser(user), sessionToken };
 }
 
@@ -183,7 +201,10 @@ export async function assertLoginAllowed(email: string): Promise<void> {
       and(
         eq(loginAttempts.emailHash, emailHash),
         eq(loginAttempts.succeeded, false),
-        gt(loginAttempts.createdAt, sql`datetime('now', '-15 minutes')`),
+        gt(
+          loginAttempts.createdAt,
+          new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+        ),
       ),
     );
   if ((result?.attempts ?? 0) >= 5) {
@@ -275,15 +296,18 @@ export async function resetPassword(token: string, password: string): Promise<vo
   }
 
   const passwordHash = await hashPassword(password);
-  await db.batch([
-    db.update(authTokens).set({ usedAt: now }).where(eq(authTokens.id, record.id)),
-    db
+  await db.transaction(async (transaction) => {
+    await transaction
+      .update(authTokens)
+      .set({ usedAt: now })
+      .where(eq(authTokens.id, record.id));
+    await transaction
       .update(users)
       .set({ passwordHash, updatedAt: now })
-      .where(eq(users.id, record.userId)),
-    db
+      .where(eq(users.id, record.userId));
+    await transaction
       .update(sessions)
       .set({ revokedAt: now })
-      .where(and(eq(sessions.userId, record.userId), isNull(sessions.revokedAt))),
-  ]);
+      .where(and(eq(sessions.userId, record.userId), isNull(sessions.revokedAt)));
+  });
 }

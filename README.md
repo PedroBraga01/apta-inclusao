@@ -1,93 +1,103 @@
 # APTA — Talento não tem barreiras
 
 Plataforma web acessível que conecta profissionais com deficiência visual a
-empresas comprometidas com inclusão. A aplicação reúne jornadas específicas
-para candidatos, empresas e para a administração da APTA.
+empresas comprometidas com inclusão. A mesma aplicação reúne as jornadas de
+candidatos, empresas e administração da APTA.
 
 ## Estado atual
 
-O repositório contém uma aplicação navegável e responsiva dos três portais. A
-autenticação, as sessões e o modelo relacional já possuem base de servidor; os
-demais domínios ainda serão substituídos progressivamente por operações da API.
-
-Já disponível na demonstração:
+O projeto é uma aplicação full-stack responsiva. Interface, páginas e APIs são
+executadas no mesmo processo Node.js. Já estão implementados:
 
 - acesso unificado para candidato, empresa e administração;
-- cadastro, confirmação de e-mail, sessão e recuperação pela API;
-- perfil e consentimentos persistentes do candidato;
-- currículo privado armazenado no R2;
-- perfil, questionário, currículo e palestras do candidato;
-- busca de talentos, consultoria e treinamentos da empresa;
-- gestão de palestras, ingressos e treinamentos pela administração;
+- cadastro, confirmação de e-mail, sessão e recuperação de senha pela API;
+- perfil, progresso e consentimentos persistentes do candidato;
+- envio, substituição, download e exclusão privada de currículo;
+- base relacional para questionários, talentos, treinamentos, consultorias,
+  palestras, ingressos, notificações e auditoria;
 - navegação por teclado, alto contraste, ampliação de texto e regiões de anúncio;
-- layout adaptado para celular, tablet e computador.
+- layout mobile-first para celular, tablet e computador.
 
 O plano completo está em [PLANO_EXECUCAO_MOBILE.md](./PLANO_EXECUCAO_MOBILE.md).
 
+## Hospedagem
+
+Toda a infraestrutura de produção foi preparada para o Render:
+
+- um Render Web Service executa frontend, renderização e APIs Next.js;
+- um Render Postgres armazena contas, sessões, dados de negócio e currículos;
+- a conexão usa a rede privada do Render e não expõe o banco à internet;
+- as migrações são executadas antes de cada publicação;
+- `/api/health` valida a aplicação e a conexão com o banco.
+
+O arquivo [render.yaml](./render.yaml) descreve os dois recursos. A configuração
+usa planos pagos adequados a uma aplicação de produção com dados pessoais. O
+plano gratuito do PostgreSQL do Render expira e não deve armazenar dados reais.
+
+Cloudflare Workers, D1, R2 e ChatGPT Sites não fazem parte da arquitetura atual.
+
 ## Direção do produto
 
-A APTA será uma única aplicação web mobile-first e instalável como PWA. Não há
-aplicativo nativo separado: a mesma interface responsiva atenderá Android, iOS,
-tablets e computadores.
-
-As próximas entregas incluem:
-
-- autenticação e permissões reais;
-- persistência de perfis e consentimentos;
-- armazenamento privado de currículos;
-- questionários com progresso salvo;
-- busca autorizada de candidatos e solicitações de contato;
-- treinamentos, consultorias, planos, palestras e ingressos;
-- pagamentos, notificações, recursos de PWA e requisitos de LGPD.
+A APTA será uma única aplicação web mobile-first. Ela poderá ser instalada como
+PWA em uma etapa posterior, usando a mesma interface responsiva no Android, iOS,
+tablets e computadores. Não haverá aplicativo nativo separado.
 
 ## Tecnologias
 
-- React 19 e Next.js 16;
-- TypeScript;
-- Vinext e Vite;
-- Cloudflare Workers para a execução publicada;
-- Drizzle ORM para acesso ao banco;
-- Tailwind CSS e estilos próprios.
-
-## Requisitos
-
-- Node.js 22.13 ou superior;
-- npm 11 ou superior.
+- Next.js 16, React 19 e TypeScript;
+- Node.js 22;
+- PostgreSQL;
+- Drizzle ORM e migrações versionadas;
+- Tailwind CSS e estilos próprios;
+- Render Web Service e Render Postgres.
 
 ## Executar localmente
 
+É necessário ter um PostgreSQL acessível. Copie `.env.example` para `.env.local`
+e ajuste `DATABASE_URL`.
+
 ```bash
 npm ci
-npm run db:migrate:local
+npm run db:migrate
 npm run dev
 ```
-
-O comando de migração prepara o D1 local antes da primeira execução. O endereço
-da aplicação é informado pelo servidor de desenvolvimento.
 
 ## Verificações
 
 ```bash
 npm run lint
 npm test
-npm run build
+npm run db:generate
 ```
 
-`npm test` gera o build e valida autenticação, cookies, metadados e a tela de
-acesso renderizada da APTA.
+`npm test` gera o build e executa os testes automatizados. `db:generate` deve
+informar que o esquema não sofreu mudanças quando todas as migrações estão
+versionadas corretamente.
+
+## Publicar no Render
+
+1. Mescle a branch aprovada na `main`.
+2. No Render, crie um Blueprint e conecte este repositório.
+3. Revise os recursos e custos descritos em `render.yaml`.
+4. Aplique o Blueprint.
+
+O Render injeta `DATABASE_URL`, executa o build, aplica as migrações no comando
+de pré-publicação e inicia o servidor. Novos commits na `main` geram publicações
+automáticas.
 
 ## Estrutura principal
 
-- `app/`: páginas, componentes e estilos da aplicação;
-- `db/`: conexão e esquema do banco;
-- `server/`: autenticação, segurança e regras executadas no servidor;
-- `worker/`: entrada da aplicação no Cloudflare Worker;
+- `app/`: páginas, componentes, estilos e rotas HTTP;
+- `db/`: conexão e esquema PostgreSQL;
+- `drizzle/`: migrações versionadas;
+- `server/`: autenticação, segurança e regras de negócio;
 - `tests/`: testes automatizados;
 - `public/`: imagens e arquivos públicos;
-- `.openai/hosting.json`: configuração da hospedagem atual.
+- `render.yaml`: infraestrutura do Render.
 
 ## Segurança
 
-Não adicione segredos ao repositório. Arquivos `.env*`, bancos locais, artefatos
-de build e estado do Wrangler permanecem ignorados pelo Git. Credenciais reais
-serão configuradas somente nos ambientes apropriados.
+Não adicione segredos ao repositório. Arquivos `.env*`, artefatos de build e
+credenciais permanecem ignorados pelo Git. O banco aceita somente conexões pela
+rede privada do Render. Currículos são validados, armazenados no PostgreSQL e
+entregues apenas por rotas autenticadas com resposta sem cache.

@@ -9,8 +9,8 @@ function safeFileName(value: string): string {
 export async function GET(request: Request) {
   try {
     const user = await requireUser(request, ["CANDIDATE"]);
-    const { resume, object } = await downloadResume(user.id);
-    return new Response(object.body, {
+    const { resume, content } = await downloadResume(user.id);
+    return new Response(new Uint8Array(content), {
       headers: {
         "Content-Type": resume.mimeType,
         "Content-Length": String(resume.sizeBytes),

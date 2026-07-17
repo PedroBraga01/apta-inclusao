@@ -1,42 +1,42 @@
 # Arquitetura da APTA
 
-## Decisão inicial
+## Decisão de infraestrutura
 
-A primeira versão de produção utilizará Cloudflare D1 para dados relacionais e
-Cloudflare R2 para currículos privados. O projeto já executa em Cloudflare
-Workers por meio do Vinext e possui suporte local aos dois bindings.
+A produção utiliza exclusivamente serviços do Render. A interface e o backend
+formam uma aplicação Next.js full-stack executada em um Render Web Service. Os
+dados relacionais e os currículos privados ficam em um Render Postgres.
 
-Essa escolha reduz serviços externos durante a construção feita por uma única
-pessoa e permite publicar API, interface e armazenamento no mesmo ambiente. O
-acesso ao banco e aos arquivos permanecerá isolado em módulos próprios para que
-uma futura migração para PostgreSQL ou outro armazenamento S3 não exija mudanças
-nas telas ou nas regras de negócio.
+Os serviços são criados na região `virginia`. O PostgreSQL bloqueia conexões
+externas e fornece sua URL interna ao Web Service por meio de `DATABASE_URL`.
 
 ## Aplicação
 
-- Uma única aplicação React, Next.js e TypeScript.
+- Uma única aplicação Next.js, React e TypeScript.
+- Renderização, recursos estáticos e APIs no mesmo domínio.
 - Design mobile-first e responsivo.
-- Instalação como PWA em Android e iOS.
+- PWA prevista para uma etapa posterior.
 - Nenhuma aplicação nativa separada.
 - Portais protegidos para candidato, empresa e administração.
 
 ## Backend
 
-- Route handlers executados no Cloudflare Worker.
-- Drizzle ORM para consultas e migrações.
+- Route Handlers do Next.js executados no runtime Node.js.
+- Drizzle ORM com driver `node-postgres`.
+- Transações PostgreSQL nas operações com múltiplas gravações.
+- Migrações executadas pelo `preDeployCommand` antes da publicação.
 - Validação e autorização realizadas no servidor.
 - Respostas de erro sem dados internos ou sensíveis.
-- Regras de negócio organizadas por domínio.
+- Health check em `/api/health` incluindo acesso ao banco.
 
 ## Dados
 
-Os identificadores públicos usam UUID. Datas são persistidas em UTC. Valores
-monetários são armazenados em centavos inteiros. Dados estruturados pequenos,
-como listas de competências, usam JSON no D1.
+Os identificadores públicos usam UUID gerado pela aplicação. Datas são gravadas
+em UTC no formato ISO 8601. Valores monetários são armazenados em centavos
+inteiros. Listas e estruturas pequenas usam `jsonb`.
 
-As tabelas estão agrupadas nos domínios:
+As 23 tabelas estão agrupadas nos domínios:
 
-- identidade e acesso;
+- identidade, autenticação e sessões;
 - candidatos, consentimentos e currículos;
 - empresas, favoritos e contatos;
 - questionários e respostas;
@@ -44,23 +44,31 @@ As tabelas estão agrupadas nos domínios:
 - palestras, pedidos e ingressos;
 - notificações e auditoria.
 
-## Arquivos privados
+## Currículos privados
 
-Currículos serão armazenados no binding R2 `RESUMES`. A chave real do objeto não
-será exposta diretamente. Download e visualização passarão por uma rota
-autorizada, com expiração e registro de auditoria.
+O conteúdo de PDF, DOC e DOCX é armazenado em uma coluna `bytea` do PostgreSQL,
+com limite de 10 MB. A resposta de metadados nunca inclui o conteúdo. Download e
+exclusão passam por rotas autenticadas, e arquivos substituídos ou excluídos têm
+o conteúdo removido do registro.
 
-## Segurança
+Essa decisão mantém todo o produto dentro do Render e evita depender do sistema
+de arquivos efêmero do Web Service ou de armazenamento externo. Quando o volume
+de arquivos justificar outra solução, a camada de serviço poderá ser substituída
+sem alterar as telas ou as regras de autorização.
 
-- Senhas nunca serão armazenadas em texto puro.
-- Sessões usarão tokens aleatórios armazenados no banco somente como hash.
-- Cookies terão atributos seguros e não serão acessíveis ao JavaScript.
-- Permissões serão validadas em cada operação da API.
-- Tokens de confirmação e recuperação terão expiração e uso único.
-- Operações administrativas e acessos a currículos serão auditados.
+## Segurança e operação
 
-## Portabilidade
+- Senhas usam PBKDF2-HMAC-SHA256 com salt exclusivo.
+- Tokens de sessão são aleatórios e persistidos somente como hash.
+- Cookies são HttpOnly, SameSite e Secure em HTTPS.
+- Confirmação e recuperação usam tokens com expiração e uso único.
+- Operações de conta usam transações atômicas.
+- O PostgreSQL é acessível somente pela rede privada do Render.
+- Planos pagos são usados porque a versão gratuita do banco expira e não possui
+  garantias adequadas para dados pessoais em produção.
 
-Componentes de interface não consultarão D1 ou R2 diretamente. Eles consumirão
-funções de serviço ou rotas da API. Essa separação mantém aberta a possibilidade
-de trocar a infraestrutura sem reconstruir o produto.
+## Publicação
+
+O Blueprint em `render.yaml` cria o Web Service e o PostgreSQL, injeta a URL de
+conexão, executa o build, aplica migrações e verifica `/api/health`. O Render só
+promove uma nova versão quando o serviço inicia com sucesso.

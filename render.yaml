@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: apta-inclusao
+    runtime: node
+    region: virginia
+    plan: starter
+    buildCommand: npm ci && npm run build
+    preDeployCommand: npm run db:migrate
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: 22.13.0
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: apta-inclusao-db
+          property: connectionString
+
+databases:
+  - name: apta-inclusao-db
+    region: virginia
+    plan: basic-256mb
+    diskSizeGB: 5
+    databaseName: apta_inclusao
+    user: apta
+    ipAllowList: []

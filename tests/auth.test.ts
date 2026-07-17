@@ -50,12 +50,16 @@ test("normalizes account input and rejects administrative public signup", () => 
 test("serializes secure session cookies and reads them back", () => {
   const secureRequest = new Request("https://apta.example/api/auth/login");
   const localRequest = new Request("http://localhost/api/auth/login");
+  const proxiedSecureRequest = new Request("http://internal/api/auth/login", {
+    headers: { "x-forwarded-proto": "https" },
+  });
   const cookie = sessionCookie(secureRequest, "token-value");
 
   assert.match(cookie, /HttpOnly/u);
   assert.match(cookie, /SameSite=Lax/u);
   assert.match(cookie, /Secure/u);
   assert.doesNotMatch(sessionCookie(localRequest, "token-value"), /Secure/u);
+  assert.match(sessionCookie(proxiedSecureRequest, "token-value"), /Secure/u);
 
   const authenticatedRequest = new Request("https://apta.example/", {
     headers: { cookie: "theme=high-contrast; apta_session=token-value" },

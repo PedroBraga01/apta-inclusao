@@ -80,28 +80,33 @@ export async function recordCandidateConsent(input: {
     RESUME_SHARING: "Permitir acesso temporário ao currículo por empresas autorizadas.",
     COMMUNICATIONS: "Receber comunicações sobre oportunidades, treinamentos e palestras.",
   } as const;
-  const consentStatement = db.insert(consents).values({
-    candidateId: input.userId,
-    type: input.type,
-    version: "2026-07-17",
-    purpose: purposeByType[input.type],
-    granted: input.granted,
-    revokedAt: input.granted ? null : new Date().toISOString(),
-  });
-
   if (input.type === "PROFILE_SHARING") {
-    await db.batch([
-      consentStatement,
-      db
+    await db.transaction(async (transaction) => {
+      await transaction.insert(consents).values({
+        candidateId: input.userId,
+        type: input.type,
+        version: "2026-07-17",
+        purpose: purposeByType[input.type],
+        granted: input.granted,
+        revokedAt: input.granted ? null : new Date().toISOString(),
+      });
+      await transaction
         .update(candidateProfiles)
         .set({
           sharingEnabled: input.granted,
           updatedAt: new Date().toISOString(),
         })
-        .where(eq(candidateProfiles.userId, input.userId)),
-    ]);
+        .where(eq(candidateProfiles.userId, input.userId));
+    });
   } else {
-    await consentStatement;
+    await db.insert(consents).values({
+      candidateId: input.userId,
+      type: input.type,
+      version: "2026-07-17",
+      purpose: purposeByType[input.type],
+      granted: input.granted,
+      revokedAt: input.granted ? null : new Date().toISOString(),
+    });
   }
   return listCandidateConsents(input.userId);
 }

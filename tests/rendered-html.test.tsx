@@ -45,3 +45,22 @@ test("does not expose legacy demonstration credentials", () => {
   assert.doesNotMatch(html, /admin@apta\.org\.br/i);
   assert.doesNotMatch(html, /Acessos de demonstração/i);
 });
+
+test("defines a full-stack Render deployment with private Postgres", async () => {
+  const blueprint = await readFile(
+    new URL("../render.yaml", import.meta.url),
+    "utf8",
+  );
+  const packageJson = await readFile(
+    new URL("../package.json", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(blueprint, /type: web/u);
+  assert.match(blueprint, /runtime: node/u);
+  assert.match(blueprint, /preDeployCommand: npm run db:migrate/u);
+  assert.match(blueprint, /fromDatabase:/u);
+  assert.match(blueprint, /ipAllowList: \[\]/u);
+  assert.match(packageJson, /"build": "next build"/u);
+  assert.doesNotMatch(packageJson, /vinext|wrangler|cloudflare/iu);
+});
