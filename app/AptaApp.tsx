@@ -2,218 +2,27 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
-type AccountPortal = "candidate" | "company" | "admin";
-type Portal = "auth" | AccountPortal;
-type AuthMode = "login" | "recover" | "register";
-type CandidateView = "inicio" | "perfil" | "questionario" | "curriculo" | "eventos";
-type CompanyView = "visao" | "talentos" | "consultoria" | "conteudos" | "empresa";
-type AdminView = "visao" | "palestras" | "treinamentos" | "participantes";
-
-type Talk = {
-  id: number;
-  title: string;
-  description: string;
-  date: string;
-  time: string;
-  format: "Online" | "Presencial";
-  location: string;
-  capacity: number;
-  issued: number;
-  status: "Publicada" | "Rascunho";
-};
-
-type TrainingBooking = {
-  id: number;
-  company: string;
-  topic: string;
-  date: string;
-  time: string;
-  format: "Online" | "Presencial" | "Híbrido";
-  participants: number;
-  contact: string;
-  status: "Solicitado" | "Confirmado";
-};
-
-type Candidate = {
-  id: number;
-  initials: string;
-  name: string;
-  city: string;
-  state: string;
-  area: string;
-  mode: string;
-  disability: string;
-  education: string;
-  experience: string;
-  skills: string[];
-  match: number;
-};
-
-const candidates: Candidate[] = [
-  {
-    id: 1,
-    initials: "AC",
-    name: "Ana Carvalho",
-    city: "Campinas",
-    state: "SP",
-    area: "Design",
-    mode: "Remoto",
-    disability: "Baixa visão",
-    education: "Superior completo",
-    experience: "4 anos em UX e pesquisa com usuários",
-    skills: ["UX/UI", "Figma", "Pesquisa"],
-    match: 94,
-  },
-  {
-    id: 2,
-    initials: "GL",
-    name: "Gabriel Lima",
-    city: "São Paulo",
-    state: "SP",
-    area: "Administrativo",
-    mode: "Híbrido",
-    disability: "Cegueira total",
-    education: "Superior em andamento",
-    experience: "3 anos em rotinas administrativas",
-    skills: ["Excel", "Atendimento", "Organização"],
-    match: 91,
-  },
-  {
-    id: 3,
-    initials: "JS",
-    name: "Juliana Santos",
-    city: "Sorocaba",
-    state: "SP",
-    area: "Atendimento",
-    mode: "Presencial",
-    disability: "Cegueira parcial",
-    education: "Ensino médio completo",
-    experience: "5 anos em relacionamento com clientes",
-    skills: ["CRM", "Comunicação", "Vendas"],
-    match: 87,
-  },
-  {
-    id: 4,
-    initials: "RC",
-    name: "Rafael Costa",
-    city: "Belo Horizonte",
-    state: "MG",
-    area: "Tecnologia",
-    mode: "Remoto",
-    disability: "Baixa visão",
-    education: "Superior completo",
-    experience: "2 anos em análise de dados",
-    skills: ["Python", "Power BI", "SQL"],
-    match: 84,
-  },
-];
-
-const initialTalks: Talk[] = [
-  {
-    id: 1,
-    title: "Carreira sem barreiras",
-    description: "Estratégias práticas para fortalecer sua trajetória profissional e se preparar para processos seletivos.",
-    date: "24/07/2026",
-    time: "19:00",
-    format: "Online",
-    location: "Transmissão ao vivo",
-    capacity: 120,
-    issued: 86,
-    status: "Publicada",
-  },
-  {
-    id: 2,
-    title: "Acessibilidade que transforma equipes",
-    description: "Uma conversa aberta para profissionais e empresas sobre tecnologia, autonomia e colaboração.",
-    date: "06/08/2026",
-    time: "15:00",
-    format: "Presencial",
-    location: "SENAI São Paulo",
-    capacity: 80,
-    issued: 63,
-    status: "Publicada",
-  },
-  {
-    id: 3,
-    title: "Comunicação inclusiva na prática",
-    description: "Como criar encontros, conteúdos e relações de trabalho mais acessíveis desde o primeiro contato.",
-    date: "19/08/2026",
-    time: "10:00",
-    format: "Online",
-    location: "Transmissão ao vivo",
-    capacity: 150,
-    issued: 41,
-    status: "Publicada",
-  },
-];
-
-const initialTrainingBookings: TrainingBooking[] = [
-  {
-    id: 1,
-    company: "NorteSul Tecnologia",
-    topic: "Liderança inclusiva na prática",
-    date: "30/07/2026",
-    time: "14:00",
-    format: "Online",
-    participants: 24,
-    contact: "renata@nortesul.com.br",
-    status: "Confirmado",
-  },
-];
-
-const candidateNavigation: Array<{ id: CandidateView; label: string; marker: string }> = [
-  { id: "inicio", label: "Início", marker: "01" },
-  { id: "perfil", label: "Meu perfil", marker: "02" },
-  { id: "questionario", label: "Questionário", marker: "03" },
-  { id: "curriculo", label: "Currículo", marker: "04" },
-  { id: "eventos", label: "Palestras e ingressos", marker: "05" },
-];
-
-const companyNavigation: Array<{ id: CompanyView; label: string; marker: string }> = [
-  { id: "visao", label: "Visão geral", marker: "01" },
-  { id: "talentos", label: "Buscar talentos", marker: "02" },
-  { id: "consultoria", label: "Consultoria", marker: "03" },
-  { id: "conteudos", label: "Treinamentos", marker: "04" },
-  { id: "empresa", label: "Minha empresa", marker: "05" },
-];
-
-function Brand({ inverse = false }: { inverse?: boolean }) {
-  return (
-    <span className={`brand ${inverse ? "brand--inverse" : ""}`} aria-label="APTA">
-      <span>A</span><span>P</span><span>T</span><span>A</span>
-    </span>
-  );
-}
-
-function Marker({ children }: { children: string }) {
-  return <span className="nav-marker" aria-hidden="true">{children}</span>;
-}
-
-function AccessibilityBar({
-  fontScale,
-  setFontScale,
-  highContrast,
-  setHighContrast,
-  onRead,
-}: {
-  fontScale: number;
-  setFontScale: (value: number) => void;
-  highContrast: boolean;
-  setHighContrast: (value: boolean) => void;
-  onRead: () => void;
-}) {
-  return (
-    <div className="accessibility-bar" role="region" aria-label="Ferramentas de acessibilidade">
-      <p>Ferramentas de acessibilidade</p>
-      <div className="accessibility-actions">
-        <button type="button" onClick={() => setFontScale(Math.max(100, fontScale - 10))} aria-label="Diminuir tamanho do texto">A−</button>
-        <button type="button" onClick={() => setFontScale(Math.min(130, fontScale + 10))} aria-label="Aumentar tamanho do texto">A+</button>
-        <button type="button" aria-pressed={highContrast} onClick={() => setHighContrast(!highContrast)}><span className="contrast-dot" aria-hidden="true" /> Alto contraste</button>
-        <button type="button" onClick={onRead}><span aria-hidden="true">◖</span> Ouvir página</button>
-      </div>
-    </div>
-  );
-}
+import { AccessibilityBar, Brand, Marker } from "./apta/components";
+import {
+  adminNavigation,
+  candidateNavigation,
+  candidates,
+  companyNavigation,
+  demoAccounts,
+  initialTalks,
+  initialTrainingBookings,
+} from "./apta/data";
+import type {
+  AccountPortal,
+  AdminView,
+  AuthMode,
+  Candidate,
+  CandidateView,
+  CompanyView,
+  Portal,
+  Talk,
+  TrainingBooking,
+} from "./apta/types";
 
 function CandidateSidebar({
   view,
@@ -864,12 +673,6 @@ function CompanyPortal({
   );
 }
 
-const demoAccounts: Array<{ email: string; password: string; portal: AccountPortal; label: string }> = [
-  { email: "candidato@apta.org.br", password: "apta123", portal: "candidate", label: "Candidato" },
-  { email: "empresa@apta.org.br", password: "apta123", portal: "company", label: "Empresa" },
-  { email: "admin@apta.org.br", password: "apta360", portal: "admin", label: "Administração" },
-];
-
 function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountPortal) => void }) {
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
@@ -1048,13 +851,6 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
     </div>
   );
 }
-
-const adminNavigation: Array<{ id: AdminView; label: string; marker: string }> = [
-  { id: "visao", label: "Visão geral", marker: "01" },
-  { id: "palestras", label: "Palestras", marker: "02" },
-  { id: "treinamentos", label: "Treinamentos", marker: "03" },
-  { id: "participantes", label: "Ingressos", marker: "04" },
-];
 
 function AdminSidebar({ view, onChange, onExit }: { view: AdminView; onChange: (view: AdminView) => void; onExit: () => void }) {
   return (

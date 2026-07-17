@@ -39,8 +39,8 @@ administração serão criadas apenas por um administrador autorizado.
 ### Serviços
 
 - API compartilhada em Node.js e TypeScript.
-- PostgreSQL para contas, perfis, questionários, eventos e agendamentos.
-- Armazenamento privado compatível com S3 para currículos.
+- Cloudflare D1 para contas, perfis, questionários, eventos e agendamentos.
+- Cloudflare R2, compatível com S3, para currículos privados.
 - E-mail transacional para recuperação de senha e confirmações.
 - Notificações push para treinamentos, palestras e contatos.
 - Mercado Pago ou Stripe para pagamentos de ingressos, após validação comercial.
@@ -150,7 +150,7 @@ possuem fluxos completos de interface, sem armazenar senha real no cliente.
 
 Estado: **planejada**
 
-- [ ] Criar API e banco PostgreSQL.
+- [ ] Criar API e banco Cloudflare D1.
 - [ ] Criar contas, sessões e permissões.
 - [ ] Implementar confirmação de e-mail.
 - [ ] Implementar recuperação e redefinição de senha.
