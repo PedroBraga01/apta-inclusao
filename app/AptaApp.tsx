@@ -1,327 +1,52 @@
 "use client";
 
+import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
-type AccountPortal = "candidate" | "company" | "admin";
-type Portal = "auth" | AccountPortal;
-type AuthMode = "login" | "recover" | "register";
-type CandidateView = "inicio" | "perfil" | "questionario" | "curriculo" | "eventos";
-type CompanyView = "visao" | "talentos" | "consultoria" | "conteudos" | "empresa";
-type AdminView = "visao" | "palestras" | "treinamentos" | "participantes";
-
-type Talk = {
-  id: number;
-  title: string;
-  description: string;
-  date: string;
-  time: string;
-  format: "Online" | "Presencial";
-  location: string;
-  capacity: number;
-  issued: number;
-  status: "Publicada" | "Rascunho";
-};
-
-type TrainingBooking = {
-  id: number;
-  company: string;
-  topic: string;
-  date: string;
-  time: string;
-  format: "Online" | "Presencial" | "Híbrido";
-  participants: number;
-  contact: string;
-  status: "Solicitado" | "Confirmado";
-};
-
-type Candidate = {
-  id: number;
-  initials: string;
-  name: string;
-  city: string;
-  state: string;
-  area: string;
-  mode: string;
-  disability: string;
-  education: string;
-  experience: string;
-  skills: string[];
-  match: number;
-};
-
-const candidates: Candidate[] = [
-  {
-    id: 1,
-    initials: "AC",
-    name: "Ana Carvalho",
-    city: "Campinas",
-    state: "SP",
-    area: "Design",
-    mode: "Remoto",
-    disability: "Baixa visão",
-    education: "Superior completo",
-    experience: "4 anos em UX e pesquisa com usuários",
-    skills: ["UX/UI", "Figma", "Pesquisa"],
-    match: 94,
-  },
-  {
-    id: 2,
-    initials: "GL",
-    name: "Gabriel Lima",
-    city: "São Paulo",
-    state: "SP",
-    area: "Administrativo",
-    mode: "Híbrido",
-    disability: "Cegueira total",
-    education: "Superior em andamento",
-    experience: "3 anos em rotinas administrativas",
-    skills: ["Excel", "Atendimento", "Organização"],
-    match: 91,
-  },
-  {
-    id: 3,
-    initials: "JS",
-    name: "Juliana Santos",
-    city: "Sorocaba",
-    state: "SP",
-    area: "Atendimento",
-    mode: "Presencial",
-    disability: "Cegueira parcial",
-    education: "Ensino médio completo",
-    experience: "5 anos em relacionamento com clientes",
-    skills: ["CRM", "Comunicação", "Vendas"],
-    match: 87,
-  },
-  {
-    id: 4,
-    initials: "RC",
-    name: "Rafael Costa",
-    city: "Belo Horizonte",
-    state: "MG",
-    area: "Tecnologia",
-    mode: "Remoto",
-    disability: "Baixa visão",
-    education: "Superior completo",
-    experience: "2 anos em análise de dados",
-    skills: ["Python", "Power BI", "SQL"],
-    match: 84,
-  },
-];
-
-const initialTalks: Talk[] = [
-  {
-    id: 1,
-    title: "Carreira sem barreiras",
-    description: "Estratégias práticas para fortalecer sua trajetória profissional e se preparar para processos seletivos.",
-    date: "24/07/2026",
-    time: "19:00",
-    format: "Online",
-    location: "Transmissão ao vivo",
-    capacity: 120,
-    issued: 86,
-    status: "Publicada",
-  },
-  {
-    id: 2,
-    title: "Acessibilidade que transforma equipes",
-    description: "Uma conversa aberta para profissionais e empresas sobre tecnologia, autonomia e colaboração.",
-    date: "06/08/2026",
-    time: "15:00",
-    format: "Presencial",
-    location: "SENAI São Paulo",
-    capacity: 80,
-    issued: 63,
-    status: "Publicada",
-  },
-  {
-    id: 3,
-    title: "Comunicação inclusiva na prática",
-    description: "Como criar encontros, conteúdos e relações de trabalho mais acessíveis desde o primeiro contato.",
-    date: "19/08/2026",
-    time: "10:00",
-    format: "Online",
-    location: "Transmissão ao vivo",
-    capacity: 150,
-    issued: 41,
-    status: "Publicada",
-  },
-];
-
-const initialTrainingBookings: TrainingBooking[] = [
-  {
-    id: 1,
-    company: "NorteSul Tecnologia",
-    topic: "Liderança inclusiva na prática",
-    date: "30/07/2026",
-    time: "14:00",
-    format: "Online",
-    participants: 24,
-    contact: "renata@nortesul.com.br",
-    status: "Confirmado",
-  },
-];
-
-const candidateNavigation: Array<{ id: CandidateView; label: string; marker: string }> = [
-  { id: "inicio", label: "Início", marker: "01" },
-  { id: "perfil", label: "Meu perfil", marker: "02" },
-  { id: "questionario", label: "Questionário", marker: "03" },
-  { id: "curriculo", label: "Currículo", marker: "04" },
-  { id: "eventos", label: "Palestras e ingressos", marker: "05" },
-];
-
-const companyNavigation: Array<{ id: CompanyView; label: string; marker: string }> = [
-  { id: "visao", label: "Visão geral", marker: "01" },
-  { id: "talentos", label: "Buscar talentos", marker: "02" },
-  { id: "consultoria", label: "Consultoria", marker: "03" },
-  { id: "conteudos", label: "Treinamentos", marker: "04" },
-  { id: "empresa", label: "Minha empresa", marker: "05" },
-];
-
-function Brand({ inverse = false }: { inverse?: boolean }) {
-  return (
-    <span className={`brand ${inverse ? "brand--inverse" : ""}`} aria-label="APTA">
-      <span>A</span><span>P</span><span>T</span><span>A</span>
-    </span>
-  );
-}
-
-function Marker({ children }: { children: string }) {
-  return <span className="nav-marker" aria-hidden="true">{children}</span>;
-}
-
-function Home({ onEnter }: { onEnter: (portal: Portal) => void }) {
-  return (
-    <div className="home-page">
-      <header className="home-header page-width">
-        <button className="brand-button" type="button" aria-label="Ir para a página inicial">
-          <Brand />
-        </button>
-        <nav className="home-nav" aria-label="Navegação principal">
-          <a href="#como-funciona">Como funciona</a>
-          <a href="#solucoes">Soluções</a>
-          <button className="text-button" type="button" onClick={() => onEnter("company")}>Área da empresa</button>
-          <button className="admin-entry" type="button" onClick={() => onEnter("admin")}>Administração</button>
-        </nav>
-      </header>
-
-      <main id="conteudo-principal">
-        <section className="hero page-width" aria-labelledby="hero-title">
-          <div className="hero-copy">
-            <p className="eyebrow"><span aria-hidden="true">●</span> Tecnologia que inclui</p>
-            <h1 id="hero-title">Talento não tem <em>barreiras.</em></h1>
-            <p className="hero-lead">
-              A APTA conecta profissionais com deficiência visual a empresas que querem transformar inclusão em prática.
-            </p>
-            <div className="hero-actions" aria-label="Escolha como entrar">
-              <button className="button button--primary button--large" type="button" onClick={() => onEnter("candidate")}>Sou candidato <span aria-hidden="true">→</span></button>
-              <button className="button button--outline button--large" type="button" onClick={() => onEnter("company")}>Sou empresa</button>
-            </div>
-            <div className="hero-proof" aria-label="Compromissos da plataforma">
-              <span><b>100%</b> acessível</span>
-              <span><b>Conexões</b> relevantes</span>
-              <span><b>Suporte</b> contínuo</span>
-            </div>
-          </div>
-
-          <div className="hero-visual" aria-label="Resumo da jornada APTA">
-            <div className="visual-orbit visual-orbit--one" aria-hidden="true" />
-            <div className="visual-orbit visual-orbit--two" aria-hidden="true" />
-            <article className="journey-card journey-card--candidate">
-              <div className="journey-topline">
-                <span className="journey-avatar" aria-hidden="true">MC</span>
-                <span className="status-pill">Perfil 68%</span>
-              </div>
-              <p className="journey-label">Para profissionais</p>
-              <h2>Seu potencial em evidência.</h2>
-              <div className="progress-track" aria-label="Perfil preenchido em 68%"><span style={{ width: "68%" }} /></div>
-              <ul>
-                <li><span aria-hidden="true">✓</span> Informações profissionais</li>
-                <li><span aria-hidden="true">✓</span> Preferências de trabalho</li>
-                <li className="muted"><span aria-hidden="true">○</span> Enviar currículo</li>
-              </ul>
-            </article>
-            <div className="connection-badge" aria-hidden="true"><span>APTA</span><small>conecta</small></div>
-            <article className="journey-card journey-card--company">
-              <div className="company-symbol" aria-hidden="true"><span /><span /><span /></div>
-              <p className="journey-label">Para empresas</p>
-              <h2>Inclusão que gera impacto.</h2>
-              <div className="mini-stat-row">
-                <span><b>24</b><small>talentos</small></span>
-                <span><b>8</b><small>conexões</small></span>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section className="path-section" id="como-funciona">
-          <div className="page-width">
-            <p className="eyebrow eyebrow--light">Uma plataforma. Dois caminhos.</p>
-            <div className="path-heading">
-              <h2>Inclusão começa com acesso — e evolui com atitude.</h2>
-              <p>Construímos jornadas específicas para quem busca oportunidades e para quem quer oferecê-las com responsabilidade.</p>
-            </div>
-            <div className="path-grid" id="solucoes">
-              <article className="path-card path-card--candidate">
-                <span className="path-number">01</span>
-                <p>Para profissionais</p>
-                <h3>Mostre quem você é. Do seu jeito.</h3>
-                <ul>
-                  <li>Experiência totalmente acessível</li>
-                  <li>Questionário de perfil e preferências</li>
-                  <li>Currículo e contatos em um só lugar</li>
-                </ul>
-                <button type="button" className="inline-action" onClick={() => onEnter("candidate")}>Acessar área do candidato <span aria-hidden="true">↗</span></button>
-              </article>
-              <article className="path-card path-card--company">
-                <span className="path-number">02</span>
-                <p>Para empresas</p>
-                <h3>Contrate melhor. Inclua de verdade.</h3>
-                <ul>
-                  <li>Busca inteligente por talentos</li>
-                  <li>Consultoria e treinamentos práticos</li>
-                  <li>Acompanhamento para evolução contínua</li>
-                </ul>
-                <button type="button" className="inline-action inline-action--light" onClick={() => onEnter("company")}>Acessar área da empresa <span aria-hidden="true">↗</span></button>
-              </article>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <footer className="home-footer page-width">
-        <Brand />
-        <p>Acesso para pessoas. Inclusão para empresas.</p>
-        <p>© 2026 APTA</p>
-      </footer>
-    </div>
-  );
-}
-
-function AccessibilityBar({
-  fontScale,
-  setFontScale,
-  highContrast,
-  setHighContrast,
-  onRead,
-}: {
-  fontScale: number;
-  setFontScale: (value: number) => void;
-  highContrast: boolean;
-  setHighContrast: (value: boolean) => void;
-  onRead: () => void;
-}) {
-  return (
-    <div className="accessibility-bar" role="region" aria-label="Ferramentas de acessibilidade">
-      <p>Ferramentas de acessibilidade</p>
-      <div className="accessibility-actions">
-        <button type="button" onClick={() => setFontScale(Math.max(100, fontScale - 10))} aria-label="Diminuir tamanho do texto">A−</button>
-        <button type="button" onClick={() => setFontScale(Math.min(130, fontScale + 10))} aria-label="Aumentar tamanho do texto">A+</button>
-        <button type="button" aria-pressed={highContrast} onClick={() => setHighContrast(!highContrast)}><span className="contrast-dot" aria-hidden="true" /> Alto contraste</button>
-        <button type="button" onClick={onRead}><span aria-hidden="true">◖</span> Ouvir página</button>
-      </div>
-    </div>
-  );
-}
+import { AccessibilityBar, Brand, Marker } from "./apta/components";
+import {
+  confirmEmail,
+  finishPasswordReset,
+  getCurrentAccount,
+  loginAccount,
+  logoutAccount,
+  registerAccount,
+  requestPasswordReset,
+  rolePortal,
+} from "./apta/auth-api";
+import {
+  loadCandidateConsents,
+  loadCandidateProfile,
+  loadResume,
+  removeResume,
+  saveCandidateConsent,
+  saveCandidateProfile,
+  sendResume,
+  type CandidateConsentData,
+  type CandidateProfileData,
+  type ResumeData,
+} from "./apta/candidate-api";
+import {
+  adminNavigation,
+  candidateNavigation,
+  candidates,
+  companyNavigation,
+  initialTalks,
+  initialTrainingBookings,
+  videoLessons,
+} from "./apta/data";
+import type {
+  AccountPortal,
+  AdminView,
+  AuthMode,
+  Candidate,
+  CandidateView,
+  CompanyView,
+  Portal,
+  Talk,
+  TrainingBooking,
+  VideoLessonCategory,
+} from "./apta/types";
 
 function CandidateSidebar({
   view,
@@ -433,10 +158,64 @@ function CandidateHome({ onChange }: { onChange: (view: CandidateView) => void }
 }
 
 function CandidateProfile({ onSaved }: { onSaved: (message: string) => void }) {
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    onSaved("Perfil atualizado com sucesso.");
+  const [profile, setProfile] = useState<CandidateProfileData | null>(null);
+  const [accountEmail, setAccountEmail] = useState("");
+  const [consents, setConsents] = useState<CandidateConsentData[]>([]);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    Promise.all([loadCandidateProfile(), loadCandidateConsents()])
+      .then(([profileResult, consentResult]) => {
+        setProfile(profileResult.profile);
+        setAccountEmail(profileResult.email);
+        setConsents(consentResult.consents);
+      })
+      .catch((loadError) =>
+        setError(loadError instanceof Error ? loadError.message : "Não foi possível carregar o perfil."),
+      );
+  }, []);
+
+  function latestConsent(type: CandidateConsentData["type"]): boolean {
+    return consents.find((consent) => consent.type === type)?.granted ?? false;
   }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    setBusy(true);
+    setError("");
+    try {
+      const result = await saveCandidateProfile({
+        fullName: data.get("fullName"),
+        phone: data.get("phone"),
+        city: data.get("city"),
+        state: data.get("state"),
+        education: data.get("education"),
+        area: data.get("area"),
+        experience: data.get("experience"),
+        workMode: data.get("workMode"),
+      });
+      setProfile(result.profile);
+      const profileSharing = data.get("profileSharing") === "on";
+      const communications = data.get("communications") === "on";
+      if (profileSharing !== latestConsent("PROFILE_SHARING")) {
+        const consentResult = await saveCandidateConsent("PROFILE_SHARING", profileSharing);
+        setConsents(consentResult.consents);
+      }
+      if (communications !== latestConsent("COMMUNICATIONS")) {
+        const consentResult = await saveCandidateConsent("COMMUNICATIONS", communications);
+        setConsents(consentResult.consents);
+      }
+      onSaved(`Perfil atualizado. Preenchimento: ${result.profile.profileProgress}%.`);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Não foi possível salvar o perfil.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!profile && !error) return <p role="status">Carregando perfil…</p>;
 
   return (
     <section className="form-page" aria-labelledby="profile-title">
@@ -445,23 +224,34 @@ function CandidateProfile({ onSaved }: { onSaved: (message: string) => void }) {
         <h1 id="profile-title">Suas informações</h1>
         <p>Mantenha seus dados atualizados para que as empresas possam entrar em contato.</p>
       </header>
+      {error && <p className="login-error" role="alert">{error}</p>}
+      {profile && (
       <form className="accessible-form" onSubmit={submit}>
         <fieldset>
           <legend>Informações de contato</legend>
           <div className="form-grid">
-            <label>Nome completo<input type="text" defaultValue="Marina Costa" autoComplete="name" /></label>
-            <label>E-mail<input type="email" defaultValue="marina.costa@email.com" autoComplete="email" /></label>
-            <label>Telefone<input type="tel" defaultValue="(11) 98765-4321" autoComplete="tel" /></label>
-            <label>Localidade<input type="text" defaultValue="São Paulo, SP" autoComplete="address-level2" /></label>
+            <label>Nome completo<input name="fullName" type="text" defaultValue={profile.fullName} autoComplete="name" required /></label>
+            <label>E-mail da conta<input type="email" value={accountEmail} disabled /></label>
+            <label>Telefone<input name="phone" type="tel" defaultValue={profile.phone ?? ""} autoComplete="tel" /></label>
+            <label>Cidade<input name="city" type="text" defaultValue={profile.city ?? ""} autoComplete="address-level2" /></label>
+            <label>Estado<input name="state" type="text" defaultValue={profile.state ?? ""} autoComplete="address-level1" /></label>
+            <label>Formação<input name="education" type="text" defaultValue={profile.education ?? ""} /></label>
           </div>
         </fieldset>
         <fieldset>
           <legend>Resumo profissional</legend>
-          <label>Área de interesse<select defaultValue="Administrativo"><option>Administrativo</option><option>Atendimento</option><option>Design</option><option>Tecnologia</option></select></label>
-          <label>Conte um pouco sobre sua experiência<textarea defaultValue="Tenho experiência com atendimento, organização de documentos e rotinas administrativas. Busco uma oportunidade em um ambiente inclusivo e colaborativo." rows={5} /></label>
+          <label>Área de interesse<select name="area" defaultValue={profile.area ?? "Administrativo"}><option>Administrativo</option><option>Atendimento</option><option>Design</option><option>Tecnologia</option></select></label>
+          <label>Modalidade preferida<select name="workMode" defaultValue={profile.workMode ?? "Remoto"}><option>Remoto</option><option>Híbrido</option><option>Presencial</option><option>Sem preferência</option></select></label>
+          <label>Conte um pouco sobre sua experiência<textarea name="experience" defaultValue={profile.experience ?? ""} rows={5} /></label>
         </fieldset>
-        <div className="form-actions"><button className="button button--primary" type="submit">Salvar alterações</button></div>
+        <fieldset>
+          <legend>Privacidade e comunicações</legend>
+          <label className="choice-card choice-card--single"><input name="profileSharing" type="checkbox" defaultChecked={latestConsent("PROFILE_SHARING")} /><span><b>Permitir que empresas encontrem meu perfil</b><small>Você pode revogar esta autorização a qualquer momento.</small></span></label>
+          <label className="choice-card choice-card--single"><input name="communications" type="checkbox" defaultChecked={latestConsent("COMMUNICATIONS")} /><span><b>Receber comunicações da APTA</b><small>Avisos sobre oportunidades, treinamentos e palestras.</small></span></label>
+        </fieldset>
+        <div className="form-actions"><button className="button button--primary" type="submit" disabled={busy}>{busy ? "Salvando…" : "Salvar alterações"}</button></div>
       </form>
+      )}
     </section>
   );
 }
@@ -522,12 +312,63 @@ function CandidateQuestionnaire({ onSaved }: { onSaved: (message: string) => voi
 }
 
 function CandidateResume({ onSaved }: { onSaved: (message: string) => void }) {
-  const [fileName, setFileName] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [resume, setResume] = useState<ResumeData | null>(null);
+  const [resumeSharing, setResumeSharing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    Promise.all([loadResume(), loadCandidateConsents()])
+      .then(([resumeResult, consentResult]) => {
+        setResume(resumeResult.resume);
+        setResumeSharing(
+          consentResult.consents.find((item) => item.type === "RESUME_SHARING")
+            ?.granted ?? false,
+        );
+      })
+      .catch((loadError) =>
+        setError(loadError instanceof Error ? loadError.message : "Não foi possível carregar o currículo."),
+      );
+  }, []);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    onSaved(fileName ? `Currículo ${fileName} adicionado ao seu perfil.` : "Informações de contato salvas.");
+    if (!selectedFile && !resume) {
+      setError("Selecione um currículo para continuar.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      if (selectedFile) {
+        const result = await sendResume(selectedFile);
+        setResume(result.resume);
+        setSelectedFile(null);
+      }
+      await saveCandidateConsent("RESUME_SHARING", resumeSharing);
+      onSaved("Currículo e autorização atualizados com sucesso.");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Não foi possível salvar o currículo.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeCurrentResume() {
+    setBusy(true);
+    setError("");
+    try {
+      await removeResume();
+      setResume(null);
+      setSelectedFile(null);
+      onSaved("Currículo excluído com sucesso.");
+    } catch (removeError) {
+      setError(removeError instanceof Error ? removeError.message : "Não foi possível excluir o currículo.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -542,28 +383,30 @@ function CandidateResume({ onSaved }: { onSaved: (message: string) => void }) {
           <legend>Arquivo do currículo</legend>
           <div className="upload-zone" onClick={() => fileRef.current?.click()}>
             <span className="upload-symbol" aria-hidden="true">↑</span>
-            <h2>{fileName || "Selecione seu currículo"}</h2>
+            <h2>{selectedFile?.name || resume?.originalName || "Selecione seu currículo"}</h2>
             <p>Formatos aceitos: PDF, DOC ou DOCX. Tamanho máximo de 10 MB.</p>
             <input
               ref={fileRef}
               type="file"
               accept=".pdf,.doc,.docx,application/pdf"
-              onChange={(event) => setFileName(event.target.files?.[0]?.name ?? "")}
+              onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
               aria-label="Selecionar arquivo de currículo"
             />
             <button className="button button--outline" type="button" onClick={(event) => { event.stopPropagation(); fileRef.current?.click(); }}>Escolher arquivo</button>
           </div>
-          {fileName && <p className="file-confirmation"><span aria-hidden="true">✓</span> Arquivo selecionado: <b>{fileName}</b></p>}
+          {selectedFile && <p className="file-confirmation"><span aria-hidden="true">✓</span> Arquivo selecionado: <b>{selectedFile.name}</b></p>}
+          {resume && !selectedFile && <p className="file-confirmation"><span aria-hidden="true">✓</span> Currículo atual: <b>{resume.originalName}</b> ({Math.ceil(resume.sizeBytes / 1024)} KB)</p>}
         </fieldset>
         <fieldset>
-          <legend>Contato preferencial</legend>
-          <div className="form-grid">
-            <label>E-mail<input type="email" defaultValue="marina.costa@email.com" /></label>
-            <label>Telefone<input type="tel" defaultValue="(11) 98765-4321" /></label>
-          </div>
-          <label className="choice-card choice-card--single"><input type="checkbox" defaultChecked /><span><b>Autorizo o contato de empresas</b><small>Empresas poderão acessar os dados acima após demonstrar interesse.</small></span></label>
+          <legend>Autorização de acesso</legend>
+          <label className="choice-card choice-card--single"><input type="checkbox" checked={resumeSharing} onChange={(event) => setResumeSharing(event.target.checked)} /><span><b>Autorizar acesso temporário ao currículo</b><small>Somente empresas permitidas poderão solicitar o documento.</small></span></label>
         </fieldset>
-        <div className="form-actions"><button className="button button--primary" type="submit">Salvar currículo e contato</button></div>
+        {error && <p className="login-error" role="alert">{error}</p>}
+        <div className="form-actions">
+          {resume && <a className="button button--outline" href="/api/candidate/resume/download">Baixar currículo</a>}
+          {resume && <button className="button button--outline" type="button" onClick={() => void removeCurrentResume()} disabled={busy}>Excluir currículo</button>}
+          <button className="button button--primary" type="submit" disabled={busy}>{busy ? "Salvando…" : "Salvar currículo"}</button>
+        </div>
       </form>
     </section>
   );
@@ -623,6 +466,95 @@ function CandidateEvents({
   );
 }
 
+const videoLessonFilters: Array<"Todos" | VideoLessonCategory> = [
+  "Todos",
+  "Excel",
+  "PowerPoint",
+  "Inglês",
+];
+
+function CandidateVideoLessons() {
+  const [filter, setFilter] = useState<"Todos" | VideoLessonCategory>("Todos");
+  const visibleLessons = filter === "Todos"
+    ? videoLessons
+    : videoLessons.filter((lesson) => lesson.category === filter);
+
+  return (
+    <section className="video-lessons-page" aria-labelledby="video-lessons-title">
+      <header className="inner-heading video-lessons-heading">
+        <div>
+          <p className="eyebrow">Aprenda no seu ritmo</p>
+          <h1 id="video-lessons-title">Vídeo aulas</h1>
+          <p>Tutoriais gratuitos de Excel e PowerPoint para apoiar sua preparação profissional.</p>
+        </div>
+        <span className="video-lessons-count"><b>{visibleLessons.length}</b> {visibleLessons.length === 1 ? "aula" : "aulas"}</span>
+      </header>
+
+      <div className="video-lessons-filters" role="group" aria-label="Filtrar vídeo aulas por tema">
+        {videoLessonFilters.map((item) => (
+          <button
+            type="button"
+            key={item}
+            className={filter === item ? "active" : ""}
+            aria-pressed={filter === item}
+            onClick={() => setFilter(item)}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+
+      <div className="video-lessons-grid">
+        {visibleLessons.map((lesson) => {
+          const categoryClass = lesson.category === "PowerPoint"
+            ? "powerpoint"
+            : lesson.category === "Inglês"
+              ? "ingles"
+              : "excel";
+
+          return (
+            <article className={`video-lesson-card video-lesson-card--${categoryClass}`} key={lesson.id}>
+              <a
+                href={lesson.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Assistir ${lesson.title} no YouTube (abre em uma nova guia)`}
+              >
+                <div className="video-lesson-media">
+                  {lesson.thumbnail ? (
+                    <Image
+                      src={lesson.thumbnail}
+                      alt=""
+                      width={1280}
+                      height={720}
+                      sizes="(max-width: 700px) 100vw, (max-width: 1180px) 50vw, 33vw"
+                    />
+                  ) : (
+                    <div className="powerpoint-thumbnail" aria-hidden="true">
+                      <span>POWERPOINT</span>
+                      <strong>AULA {lesson.lessonNumber}</strong>
+                      <i>P</i>
+                    </div>
+                  )}
+                  <span className="video-play" aria-hidden="true">▶</span>
+                  <span className="video-category">{lesson.category}</span>
+                </div>
+                <div className="video-lesson-copy">
+                  <p>Aula {lesson.lessonNumber}</p>
+                  <h2>{lesson.title}</h2>
+                  <span>{lesson.provider}<i aria-hidden="true">↗</i></span>
+                </div>
+              </a>
+            </article>
+          );
+        })}
+      </div>
+
+      <p className="video-lessons-note">Os vídeos são conteúdos públicos de canais educacionais e abrem diretamente no YouTube.</p>
+    </section>
+  );
+}
+
 function CandidatePortal({
   onExit,
   talks,
@@ -669,6 +601,7 @@ function CandidatePortal({
           {view === "questionario" && <CandidateQuestionnaire onSaved={saveMessage} />}
           {view === "curriculo" && <CandidateResume onSaved={saveMessage} />}
           {view === "eventos" && <CandidateEvents talks={talks} reservedTalkIds={reservedTalkIds} onReserve={(talkId) => { onReserve(talkId); saveMessage("Ingresso retirado com sucesso."); }} />}
+          {view === "videoaulas" && <CandidateVideoLessons />}
         </main>
       </div>
       <div className="live-message" role="status" aria-live="polite">{message}</div>
@@ -972,12 +905,6 @@ function CompanyPortal({
   );
 }
 
-const demoAccounts: Array<{ email: string; password: string; portal: AccountPortal; label: string }> = [
-  { email: "candidato@apta.org.br", password: "apta123", portal: "candidate", label: "Candidato" },
-  { email: "empresa@apta.org.br", password: "apta123", portal: "company", label: "Empresa" },
-  { email: "admin@apta.org.br", password: "apta360", portal: "admin", label: "Administração" },
-];
-
 function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountPortal) => void }) {
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
@@ -985,6 +912,8 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
   const [accountType, setAccountType] = useState<Exclude<AccountPortal, "admin">>("candidate");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [pendingToken, setPendingToken] = useState("");
+  const [busy, setBusy] = useState(false);
   const [fontScale, setFontScale] = useState(100);
   const [highContrast, setHighContrast] = useState(false);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -997,6 +926,7 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
     setMode(nextMode);
     setError("");
     setMessage("");
+    setPendingToken("");
   }
 
   function readPage() {
@@ -1012,24 +942,50 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
     setMessage("Leitura da página iniciada.");
   }
 
-  function submitLogin(event: FormEvent<HTMLFormElement>) {
+  async function submitLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const account = demoAccounts.find((item) => item.email === email.trim().toLowerCase() && item.password === password);
-    if (!account) {
-      setError("E-mail ou senha incorretos. Confira os dados e tente novamente.");
-      return;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await loginAccount(email, password);
+      onAuthenticated(rolePortal(result.user.role));
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Não foi possível entrar.",
+      );
+    } finally {
+      setBusy(false);
     }
-    setError("");
-    onAuthenticated(account.portal);
   }
 
-  function submitRecovery(event: FormEvent<HTMLFormElement>) {
+  async function submitRecovery(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const recoveryEmail = String(data.get("email") ?? "");
+    setBusy(true);
     setError("");
-    setMessage("Se existir uma conta com esse e-mail, enviaremos as instruções para redefinir a senha.");
+    try {
+      const result = await requestPasswordReset(recoveryEmail);
+      if (result.resetToken) {
+        setPendingToken(result.resetToken);
+        setMode("reset");
+      } else {
+        setMessage(result.message);
+      }
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Não foi possível solicitar a recuperação.",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function submitRegistration(event: FormEvent<HTMLFormElement>) {
+  async function submitRegistration(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const newPassword = String(data.get("new-password") ?? "");
@@ -1042,14 +998,81 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
       setError("As senhas informadas não são iguais.");
       return;
     }
+    setBusy(true);
     setError("");
-    onAuthenticated(accountType);
+    try {
+      const registrationEmail = String(data.get("email") ?? "");
+      const result = await registerAccount({
+        email: registrationEmail,
+        password: newPassword,
+        name: String(data.get("name") ?? ""),
+        role: accountType === "candidate" ? "CANDIDATE" : "COMPANY",
+      });
+      setEmail(registrationEmail);
+      setPassword("");
+      setPendingToken(result.verificationToken ?? "");
+      setMessage(
+        result.verificationToken
+          ? "Conta criada. Confirme o e-mail para liberar o acesso."
+          : "Conta criada. Enviamos um link de confirmação para seu e-mail.",
+      );
+      setMode("verify");
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Não foi possível criar a conta.",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function fillDemo(account: (typeof demoAccounts)[number]) {
-    setEmail(account.email);
-    setPassword(account.password);
+  async function confirmPendingEmail() {
+    if (!pendingToken) return;
+    setBusy(true);
     setError("");
+    try {
+      await confirmEmail(pendingToken);
+      setPendingToken("");
+      setMode("login");
+      setMessage("E-mail confirmado. Entre com sua senha para continuar.");
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Não foi possível confirmar o e-mail.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitNewPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const newPassword = String(data.get("new-password") ?? "");
+    const confirmation = String(data.get("password-confirmation") ?? "");
+    if (newPassword !== confirmation) {
+      setError("As senhas informadas não são iguais.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const result = await finishPasswordReset(pendingToken, newPassword);
+      setPendingToken("");
+      setMode("login");
+      setMessage(result.message);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Não foi possível redefinir a senha.",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -1083,20 +1106,10 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
                 <div className="auth-label-row"><label htmlFor="login-password">Senha</label><button type="button" onClick={() => changeMode("recover")}>Esqueci minha senha</button></div>
                 <input id="login-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required placeholder="Digite sua senha" />
                 {error && <p className="login-error" role="alert">{error}</p>}
-                <button className="button button--primary button--full" type="submit">Entrar</button>
+                <button className="button button--primary button--full" type="submit" disabled={busy}>{busy ? "Entrando…" : "Entrar"}</button>
               </form>
               <div className="auth-divider"><span>ou</span></div>
               <button className="button button--outline button--full" type="button" onClick={() => changeMode("register")}>Cadastrar-se</button>
-              <details className="auth-demo">
-                <summary>Acessos de demonstração</summary>
-                <div>
-                  {demoAccounts.map((account) => (
-                    <button type="button" key={account.portal} onClick={() => fillDemo(account)}>
-                      <span>{account.label}</span><small>{account.email}</small>
-                    </button>
-                  ))}
-                </div>
-              </details>
             </>
           )}
 
@@ -1108,8 +1121,9 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
               <p className="auth-description">Informe o e-mail da conta para receber as instruções de recuperação.</p>
               <form className="auth-form" onSubmit={submitRecovery}>
                 <label htmlFor="recovery-email">E-mail</label>
-                <input id="recovery-email" type="email" autoComplete="email" inputMode="email" required placeholder="voce@exemplo.com.br" />
-                <button className="button button--primary button--full" type="submit">Enviar instruções</button>
+                <input id="recovery-email" name="email" type="email" autoComplete="email" inputMode="email" required placeholder="voce@exemplo.com.br" />
+                {error && <p className="login-error" role="alert">{error}</p>}
+                <button className="button button--primary button--full" type="submit" disabled={busy}>{busy ? "Enviando…" : "Enviar instruções"}</button>
               </form>
               {message && <p className="auth-success" role="status">{message}</p>}
             </>
@@ -1146,7 +1160,39 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
                 <input id="register-confirmation" name="password-confirmation" type="password" autoComplete="new-password" minLength={8} required placeholder="Digite a senha novamente" />
                 <label className="terms-check"><input type="checkbox" required /><span>Li e aceito os Termos de Uso e a Política de Privacidade.</span></label>
                 {error && <p className="login-error" role="alert">{error}</p>}
-                <button className="button button--primary button--full" type="submit">Criar conta e continuar</button>
+                <button className="button button--primary button--full" type="submit" disabled={busy}>{busy ? "Criando conta…" : "Criar conta e continuar"}</button>
+              </form>
+            </>
+          )}
+
+          {mode === "verify" && (
+            <>
+              <button className="auth-back" type="button" onClick={() => changeMode("login")}>← Voltar para o login</button>
+              <p className="section-kicker">Confirmação de e-mail</p>
+              <h2 id="auth-title" ref={titleRef} tabIndex={-1}>Confirme sua conta</h2>
+              <p className="auth-description">{message}</p>
+              {pendingToken && (
+                <button className="button button--primary button--full" type="button" onClick={confirmPendingEmail} disabled={busy}>
+                  {busy ? "Confirmando…" : "Confirmar e-mail de desenvolvimento"}
+                </button>
+              )}
+              {error && <p className="login-error" role="alert">{error}</p>}
+            </>
+          )}
+
+          {mode === "reset" && (
+            <>
+              <button className="auth-back" type="button" onClick={() => changeMode("login")}>← Voltar para o login</button>
+              <p className="section-kicker">Nova senha</p>
+              <h2 id="auth-title" ref={titleRef} tabIndex={-1}>Crie uma nova senha</h2>
+              <p className="auth-description">Escolha uma senha com pelo menos 8 caracteres.</p>
+              <form className="auth-form" onSubmit={submitNewPassword}>
+                <label htmlFor="reset-password">Nova senha</label>
+                <input id="reset-password" name="new-password" type="password" autoComplete="new-password" minLength={8} required />
+                <label htmlFor="reset-confirmation">Confirme a nova senha</label>
+                <input id="reset-confirmation" name="password-confirmation" type="password" autoComplete="new-password" minLength={8} required />
+                {error && <p className="login-error" role="alert">{error}</p>}
+                <button className="button button--primary button--full" type="submit" disabled={busy}>{busy ? "Salvando…" : "Redefinir senha"}</button>
               </form>
             </>
           )}
@@ -1156,13 +1202,6 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
     </div>
   );
 }
-
-const adminNavigation: Array<{ id: AdminView; label: string; marker: string }> = [
-  { id: "visao", label: "Visão geral", marker: "01" },
-  { id: "palestras", label: "Palestras", marker: "02" },
-  { id: "treinamentos", label: "Treinamentos", marker: "03" },
-  { id: "participantes", label: "Ingressos", marker: "04" },
-];
 
 function AdminSidebar({ view, onChange, onExit }: { view: AdminView; onChange: (view: AdminView) => void; onExit: () => void }) {
   return (
@@ -1299,6 +1338,28 @@ export function AptaApp() {
   const [reservedTalkIds, setReservedTalkIds] = useState<number[]>([]);
   const [trainingBookings, setTrainingBookings] = useState<TrainingBooking[]>(initialTrainingBookings);
 
+  useEffect(() => {
+    let active = true;
+    getCurrentAccount()
+      .then(({ user }) => {
+        if (active) setPortal(rolePortal(user.role));
+      })
+      .catch(() => {
+        // Anonymous access is the expected initial state.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function exitAccount() {
+    try {
+      await logoutAccount();
+    } finally {
+      setPortal("auth");
+    }
+  }
+
   function reserveTicket(talkId: number) {
     if (reservedTalkIds.includes(talkId)) return;
     setTalks((current) => current.map((talk) => talk.id === talkId && talk.issued < talk.capacity ? { ...talk, issued: talk.issued + 1 } : talk));
@@ -1317,8 +1378,8 @@ export function AptaApp() {
     setTrainingBookings((current) => current.map((booking) => booking.id === bookingId ? { ...booking, status: "Confirmado" } : booking));
   }
 
-  if (portal === "candidate") return <CandidatePortal onExit={() => setPortal("auth")} talks={talks} reservedTalkIds={reservedTalkIds} onReserve={reserveTicket} />;
-  if (portal === "company") return <CompanyPortal onExit={() => setPortal("auth")} bookings={trainingBookings} onScheduleTraining={scheduleTraining} />;
-  if (portal === "admin") return <AdminPortal onExit={() => setPortal("auth")} talks={talks} bookings={trainingBookings} onCreateTalk={createTalk} onConfirmTraining={confirmTraining} />;
+  if (portal === "candidate") return <CandidatePortal onExit={() => void exitAccount()} talks={talks} reservedTalkIds={reservedTalkIds} onReserve={reserveTicket} />;
+  if (portal === "company") return <CompanyPortal onExit={() => void exitAccount()} bookings={trainingBookings} onScheduleTraining={scheduleTraining} />;
+  if (portal === "admin") return <AdminPortal onExit={() => void exitAccount()} talks={talks} bookings={trainingBookings} onCreateTalk={createTalk} onConfirmTraining={confirmTraining} />;
   return <UnifiedAccess onAuthenticated={setPortal} />;
 }

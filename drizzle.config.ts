@@ -3,5 +3,10 @@ import { defineConfig } from "drizzle-kit";
 export default defineConfig({
   out: "./drizzle",
   schema: "./db/schema.ts",
-  dialect: "sqlite",
+  dialect: "postgresql",
+  dbCredentials: {
+    url:
+      process.env.DATABASE_URL ??
+      "postgresql://apta:apta@localhost:5432/apta_inclusao",
+  },
 });
