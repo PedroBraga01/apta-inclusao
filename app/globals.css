@@ -1380,9 +1380,16 @@ button:disabled {
 
 .candidate-portal--contrast .task-panel,
 .candidate-portal--contrast .opportunity-panel,
-.candidate-portal--contrast .accessible-form fieldset {
+.candidate-portal--contrast .accessible-form fieldset,
+.candidate-portal--contrast .video-lesson-media,
+.candidate-portal--contrast .video-lessons-filters button {
   border-width: 2px;
   border-color: #000;
+}
+
+.candidate-portal--contrast .video-lessons-filters button.active {
+  background: #000;
+  color: #fff;
 }
 
 .company-portal {
@@ -2545,6 +2552,259 @@ button:disabled {
   color: #425b03 !important;
   font-size: 0.68rem;
   text-align: center;
+}
+
+.video-lessons-page {
+  padding-bottom: 24px;
+}
+
+.video-lessons-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.video-lessons-heading > div > p:last-child {
+  max-width: 640px;
+}
+
+.video-lessons-count {
+  display: inline-flex;
+  min-width: 112px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: white;
+  padding: 10px 14px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.video-lessons-count b {
+  color: var(--blue);
+  font-size: 1rem;
+}
+
+.video-lessons-filters {
+  display: flex;
+  overflow-x: auto;
+  gap: 8px;
+  margin: 26px 0 28px;
+  padding-bottom: 3px;
+}
+
+.video-lessons-filters button {
+  min-height: 42px;
+  flex: 0 0 auto;
+  border: 1px solid #cbc8dc;
+  border-radius: 999px;
+  background: white;
+  padding: 9px 17px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.video-lessons-filters button:hover,
+.video-lessons-filters button.active {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: white;
+}
+
+.video-lessons-grid {
+  display: grid;
+  gap: 30px 18px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+}
+
+.video-lesson-card {
+  min-width: 0;
+}
+
+.video-lesson-card a {
+  display: block;
+  height: 100%;
+  border-radius: 15px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.video-lesson-card a:focus-visible {
+  outline: 4px solid var(--coral);
+  outline-offset: 5px;
+}
+
+.video-lesson-media {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  border: 1px solid rgba(24, 20, 48, 0.12);
+  border-radius: 15px;
+  background: #dcd9e9;
+  box-shadow: 0 8px 22px rgba(28, 18, 90, 0.08);
+}
+
+.video-lesson-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 180ms ease;
+}
+
+.video-lesson-card a:hover .video-lesson-media img,
+.video-lesson-card a:hover .powerpoint-thumbnail {
+  transform: scale(1.025);
+}
+
+.video-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: inline-flex;
+  width: 52px;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  background: rgba(20, 15, 44, 0.88);
+  color: white;
+  font-size: 1rem;
+  line-height: 1;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
+}
+
+.video-category {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 6px;
+  background: rgba(20, 15, 44, 0.88);
+  color: white;
+  padding: 5px 8px;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.powerpoint-thumbnail {
+  position: relative;
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  background: linear-gradient(135deg, #8d1d08 0%, #d74622 56%, #f2a15b 100%);
+  color: white;
+  padding: 13% 35% 13% 8%;
+  transition: transform 180ms ease;
+}
+
+.powerpoint-thumbnail::after {
+  position: absolute;
+  top: 17%;
+  right: 8%;
+  width: 28%;
+  aspect-ratio: 1;
+  border: 14px solid rgba(255, 255, 255, 0.22);
+  border-radius: 9px;
+  content: "";
+  transform: rotate(8deg);
+}
+
+.powerpoint-thumbnail span {
+  font-size: clamp(0.72rem, 1.2vw, 1rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.powerpoint-thumbnail strong {
+  margin-top: 3px;
+  font-size: clamp(1.8rem, 4vw, 3.4rem);
+  letter-spacing: -0.06em;
+  line-height: 0.95;
+}
+
+.powerpoint-thumbnail i {
+  position: absolute;
+  top: 50%;
+  right: 13%;
+  z-index: 1;
+  display: inline-flex;
+  width: 23%;
+  aspect-ratio: 1;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: #a7270c;
+  color: white;
+  font-size: clamp(2rem, 4vw, 3.6rem);
+  font-style: normal;
+  font-weight: 900;
+  transform: translateY(-50%);
+  box-shadow: 7px 8px 0 rgba(83, 12, 0, 0.25);
+}
+
+.video-lesson-copy {
+  padding: 13px 4px 0;
+}
+
+.video-lesson-copy > p {
+  margin: 0 0 5px;
+  color: var(--blue);
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.video-lesson-card--powerpoint .video-lesson-copy > p {
+  color: #a32910;
+}
+
+.video-lesson-card--ingles .video-lesson-copy > p {
+  color: #315bb0;
+}
+
+.video-lesson-copy h2 {
+  margin: 0 0 9px;
+  font-size: 1.08rem;
+  letter-spacing: -0.025em;
+  line-height: 1.28;
+}
+
+.video-lesson-copy > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 650;
+}
+
+.video-lesson-copy > span i {
+  color: var(--blue);
+  font-size: 1rem;
+  font-style: normal;
+}
+
+.video-lessons-note {
+  margin: 32px 0 0;
+  border-top: 1px solid var(--line);
+  padding-top: 17px;
+  color: var(--muted);
+  font-size: 0.68rem;
 }
 
 .training-scheduler {
@@ -3968,6 +4228,7 @@ button:disabled {
   .results-heading,
   .admin-heading,
   .events-heading,
+  .video-lessons-heading,
   .scheduler-heading {
     align-items: flex-start;
     flex-direction: column;

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { AccessibilityBar, Brand, Marker } from "./apta/components";
@@ -32,6 +33,7 @@ import {
   companyNavigation,
   initialTalks,
   initialTrainingBookings,
+  videoLessons,
 } from "./apta/data";
 import type {
   AccountPortal,
@@ -43,6 +45,7 @@ import type {
   Portal,
   Talk,
   TrainingBooking,
+  VideoLessonCategory,
 } from "./apta/types";
 
 function CandidateSidebar({
@@ -463,6 +466,95 @@ function CandidateEvents({
   );
 }
 
+const videoLessonFilters: Array<"Todos" | VideoLessonCategory> = [
+  "Todos",
+  "Excel",
+  "PowerPoint",
+  "Inglês",
+];
+
+function CandidateVideoLessons() {
+  const [filter, setFilter] = useState<"Todos" | VideoLessonCategory>("Todos");
+  const visibleLessons = filter === "Todos"
+    ? videoLessons
+    : videoLessons.filter((lesson) => lesson.category === filter);
+
+  return (
+    <section className="video-lessons-page" aria-labelledby="video-lessons-title">
+      <header className="inner-heading video-lessons-heading">
+        <div>
+          <p className="eyebrow">Aprenda no seu ritmo</p>
+          <h1 id="video-lessons-title">Vídeo aulas</h1>
+          <p>Tutoriais gratuitos de Excel e PowerPoint para apoiar sua preparação profissional.</p>
+        </div>
+        <span className="video-lessons-count"><b>{visibleLessons.length}</b> {visibleLessons.length === 1 ? "aula" : "aulas"}</span>
+      </header>
+
+      <div className="video-lessons-filters" role="group" aria-label="Filtrar vídeo aulas por tema">
+        {videoLessonFilters.map((item) => (
+          <button
+            type="button"
+            key={item}
+            className={filter === item ? "active" : ""}
+            aria-pressed={filter === item}
+            onClick={() => setFilter(item)}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+
+      <div className="video-lessons-grid">
+        {visibleLessons.map((lesson) => {
+          const categoryClass = lesson.category === "PowerPoint"
+            ? "powerpoint"
+            : lesson.category === "Inglês"
+              ? "ingles"
+              : "excel";
+
+          return (
+            <article className={`video-lesson-card video-lesson-card--${categoryClass}`} key={lesson.id}>
+              <a
+                href={lesson.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Assistir ${lesson.title} no YouTube (abre em uma nova guia)`}
+              >
+                <div className="video-lesson-media">
+                  {lesson.thumbnail ? (
+                    <Image
+                      src={lesson.thumbnail}
+                      alt=""
+                      width={1280}
+                      height={720}
+                      sizes="(max-width: 700px) 100vw, (max-width: 1180px) 50vw, 33vw"
+                    />
+                  ) : (
+                    <div className="powerpoint-thumbnail" aria-hidden="true">
+                      <span>POWERPOINT</span>
+                      <strong>AULA {lesson.lessonNumber}</strong>
+                      <i>P</i>
+                    </div>
+                  )}
+                  <span className="video-play" aria-hidden="true">▶</span>
+                  <span className="video-category">{lesson.category}</span>
+                </div>
+                <div className="video-lesson-copy">
+                  <p>Aula {lesson.lessonNumber}</p>
+                  <h2>{lesson.title}</h2>
+                  <span>{lesson.provider}<i aria-hidden="true">↗</i></span>
+                </div>
+              </a>
+            </article>
+          );
+        })}
+      </div>
+
+      <p className="video-lessons-note">Os vídeos são conteúdos públicos de canais educacionais e abrem diretamente no YouTube.</p>
+    </section>
+  );
+}
+
 function CandidatePortal({
   onExit,
   talks,
@@ -509,6 +601,7 @@ function CandidatePortal({
           {view === "questionario" && <CandidateQuestionnaire onSaved={saveMessage} />}
           {view === "curriculo" && <CandidateResume onSaved={saveMessage} />}
           {view === "eventos" && <CandidateEvents talks={talks} reservedTalkIds={reservedTalkIds} onReserve={(talkId) => { onReserve(talkId); saveMessage("Ingresso retirado com sucesso."); }} />}
+          {view === "videoaulas" && <CandidateVideoLessons />}
         </main>
       </div>
       <div className="live-message" role="status" aria-live="polite">{message}</div>

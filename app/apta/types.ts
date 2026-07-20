@@ -6,7 +6,8 @@ export type CandidateView =
   | "perfil"
   | "questionario"
   | "curriculo"
-  | "eventos";
+  | "eventos"
+  | "videoaulas";
 export type CompanyView =
   | "visao"
   | "talentos"
@@ -64,4 +65,16 @@ export type DemoAccount = {
   password: string;
   portal: AccountPortal;
   label: string;
+};
+
+export type VideoLessonCategory = "Excel" | "PowerPoint" | "Inglês";
+
+export type VideoLesson = {
+  id: string;
+  lessonNumber: number;
+  category: VideoLessonCategory;
+  title: string;
+  provider: string;
+  url: string;
+  thumbnail?: string;
 };
