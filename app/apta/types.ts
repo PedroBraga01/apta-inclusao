@@ -6,7 +6,6 @@ export type CandidateView =
   | "perfil"
   | "questionario"
   | "curriculo"
-  | "eventos"
   | "videoaulas";
 export type CompanyView =
   | "visao"

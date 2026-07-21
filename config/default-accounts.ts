@@ -4,7 +4,7 @@ export const defaultAccounts = [
     password: "apta1234",
     portal: "candidate",
     role: "CANDIDATE",
-    label: "Pessoa com deficiência visual",
+    label: "Usuário",
     name: "Candidato APTA",
   },
   {

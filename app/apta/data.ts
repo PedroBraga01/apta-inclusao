@@ -134,8 +134,7 @@ export const candidateNavigation: Array<{
   { id: "perfil", label: "Meu perfil", marker: "02" },
   { id: "questionario", label: "Questionário", marker: "03" },
   { id: "curriculo", label: "Currículo", marker: "04" },
-  { id: "eventos", label: "Palestras e ingressos", marker: "05" },
-  { id: "videoaulas", label: "Vídeo aulas", marker: "06" },
+  { id: "videoaulas", label: "Vídeo aulas", marker: "05" },
 ];
 
 export const videoLessons: VideoLesson[] = [

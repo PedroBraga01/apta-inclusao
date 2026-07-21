@@ -1400,7 +1400,6 @@ button:disabled {
 .candidate-portal--contrast .task-panel,
 .candidate-portal--contrast .opportunity-panel,
 .candidate-portal--contrast .opportunity-card,
-.candidate-portal--contrast .talk-card,
 .candidate-portal--contrast .accessible-form fieldset,
 .candidate-portal--contrast .upload-zone,
 .candidate-portal--contrast .video-lesson-media,
@@ -1414,9 +1413,7 @@ button:disabled {
 .candidate-portal--contrast :is(h1, h2, h3, b, strong, label, legend, dt, dd),
 .candidate-portal--contrast .section-kicker,
 .candidate-portal--contrast .task-row small,
-.candidate-portal--contrast .inner-heading > p:last-child,
-.candidate-portal--contrast .talk-card > p,
-.candidate-portal--contrast .talk-card dd {
+.candidate-portal--contrast .inner-heading > p:last-child {
   color: #fff;
 }
 
@@ -2468,157 +2465,10 @@ button:disabled {
   cursor: pointer;
 }
 
-.events-heading {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 24px;
-}
-
-.ticket-summary {
-  display: inline-flex;
-  min-width: 145px;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: white;
-  padding: 12px 14px;
-  color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 700;
-}
-
-.ticket-summary b {
-  color: var(--blue);
-  font-size: 1.4rem;
-}
-
-.talk-grid {
-  display: grid;
-  gap: 18px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.talk-card {
-  position: relative;
-  display: flex;
-  min-height: 430px;
-  flex-direction: column;
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  background: white;
-  padding: 28px;
-}
-
-.talk-date {
-  display: flex;
-  width: 76px;
-  height: 70px;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  border-radius: 14px;
-  background: var(--blue);
-  color: white;
-}
-
-.talk-date span {
-  font-size: 1.05rem;
-  font-weight: 900;
-}
-
-.talk-date small {
-  margin-top: 4px;
-  color: #d7d3f6;
-}
-
-.event-format {
-  position: absolute;
-  top: 28px;
-  right: 28px;
-  border-radius: 999px;
-  padding: 7px 10px;
-  font-size: 0.65rem;
-  font-weight: 850;
-}
-
-.event-format--online {
-  background: #eff7d2;
-  color: #425b03;
-}
-
-.event-format--onsite {
-  background: #ffe1e2;
-  color: #8a262b;
-}
-
-.talk-card h2 {
-  margin: 24px 0 10px;
-  font-size: 1.6rem;
-  letter-spacing: -0.04em;
-  line-height: 1.1;
-}
-
-.talk-card > p {
-  margin: 0;
-  color: var(--muted);
-  line-height: 1.55;
-}
-
-.talk-card dl {
-  display: grid;
-  gap: 9px;
-  margin: 22px 0;
-}
-
-.talk-card dl > div {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: 92px 1fr;
-  font-size: 0.75rem;
-}
-
-.talk-card dt {
-  color: var(--muted);
-}
-
-.talk-card dd {
-  margin: 0;
-  font-weight: 800;
-}
-
-.seat-progress {
-  display: grid;
-  align-items: center;
-  gap: 9px;
-  grid-template-columns: 1fr auto;
-  margin: auto 0 18px;
-}
-
-.seat-progress .progress-track span,
 .admin-table .progress-track span,
 .ticket-admin-grid .progress-track span,
 .admin-event-list .progress-track span {
   background: var(--coral);
-}
-
-.seat-progress small {
-  color: var(--muted);
-  font-size: 0.65rem;
-}
-
-.button--ticket {
-  border-color: #9aba35;
-  background: #eff7d2;
-  color: #344a00;
-}
-
-.ticket-note {
-  margin: 10px 0 0 !important;
-  color: #425b03 !important;
-  font-size: 0.68rem;
-  text-align: center;
 }
 
 .video-lessons-page {
@@ -4351,7 +4201,6 @@ button:disabled {
   .company-heading,
   .results-heading,
   .admin-heading,
-  .events-heading,
   .video-lessons-heading,
   .scheduler-heading {
     align-items: flex-start;
@@ -4376,7 +4225,6 @@ button:disabled {
   .content-grid,
   .service-strip,
   .drawer-actions,
-  .talk-grid,
   .scheduler-grid,
   .admin-metrics,
   .admin-booking-grid,
@@ -4748,8 +4596,7 @@ button:disabled {
   .dashboard-heading,
   .company-heading,
   .admin-heading,
-  .inner-heading,
-  .events-heading {
+  .inner-heading {
     gap: 16px;
     margin-bottom: 24px;
   }
@@ -4795,8 +4642,7 @@ button:disabled {
 
   .progress-copy .button,
   .company-heading > .button,
-  .admin-heading > .button,
-  .events-heading > .button {
+  .admin-heading > .button {
     width: 100%;
   }
 
@@ -4928,22 +4774,6 @@ button:disabled {
   .upload-zone {
     min-height: 230px;
     padding: 22px 14px;
-  }
-
-  .ticket-summary {
-    align-self: stretch;
-    text-align: center;
-  }
-
-  .talk-card {
-    min-height: auto;
-    padding: 20px;
-  }
-
-  .talk-card dl > div {
-    grid-template-columns: 1fr;
-    gap: 3px;
-    font-size: 0.9rem;
   }
 
   .metric-grid article,

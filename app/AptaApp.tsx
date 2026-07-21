@@ -423,60 +423,6 @@ function CandidateResume({ onSaved }: { onSaved: (message: string) => void }) {
   );
 }
 
-function CandidateEvents({
-  talks,
-  reservedTalkIds,
-  onReserve,
-}: {
-  talks: Talk[];
-  reservedTalkIds: number[];
-  onReserve: (talkId: number) => void;
-}) {
-  const publishedTalks = talks.filter((talk) => talk.status === "Publicada");
-
-  return (
-    <section className="form-page events-page" aria-labelledby="events-title">
-      <header className="inner-heading events-heading">
-        <div>
-          <p className="section-kicker">Palestras APTA</p>
-          <h1 id="events-title">Conhecimento também abre portas.</h1>
-          <p>Reserve gratuitamente seu ingresso e acompanhe encontros preparados com acessibilidade desde o início.</p>
-        </div>
-        <span className="ticket-summary"><b>{reservedTalkIds.length}</b> {reservedTalkIds.length === 1 ? "ingresso retirado" : "ingressos retirados"}</span>
-      </header>
-      <div className="talk-grid">
-        {publishedTalks.map((talk) => {
-          const remaining = Math.max(0, talk.capacity - talk.issued);
-          const reserved = reservedTalkIds.includes(talk.id);
-          const occupancy = Math.min(100, Math.round((talk.issued / talk.capacity) * 100));
-          return (
-            <article className="talk-card" key={talk.id}>
-              <div className="talk-date"><span>{talk.date.slice(0, 5)}</span><small>{talk.time}</small></div>
-              <span className={`event-format event-format--${talk.format === "Online" ? "online" : "onsite"}`}>{talk.format}</span>
-              <h2>{talk.title}</h2>
-              <p>{talk.description}</p>
-              <dl>
-                <div><dt>Local</dt><dd>{talk.location}</dd></div>
-                <div><dt>Disponibilidade</dt><dd>{remaining > 0 ? `${remaining} lugares restantes` : "Ingressos esgotados"}</dd></div>
-              </dl>
-              <div className="seat-progress" aria-label={`${talk.issued} de ${talk.capacity} ingressos retirados`}><div className="progress-track"><span style={{ width: `${occupancy}%` }} /></div><small>{talk.issued}/{talk.capacity}</small></div>
-              <button
-                className={`button button--full ${reserved ? "button--ticket" : "button--primary"}`}
-                type="button"
-                disabled={remaining === 0 && !reserved}
-                onClick={() => !reserved && onReserve(talk.id)}
-              >
-                {reserved ? "✓ Ingresso garantido" : remaining === 0 ? "Ingressos esgotados" : "Retirar ingresso"}
-              </button>
-              {reserved && <p className="ticket-note">Seu ingresso é digital. Apresente seu nome no credenciamento.</p>}
-            </article>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
 const videoLessonFilters: Array<"Todos" | VideoLessonCategory> = [
   "Todos",
   "Excel",
@@ -566,17 +512,7 @@ function CandidateVideoLessons() {
   );
 }
 
-function CandidatePortal({
-  onExit,
-  talks,
-  reservedTalkIds,
-  onReserve,
-}: {
-  onExit: () => void;
-  talks: Talk[];
-  reservedTalkIds: number[];
-  onReserve: (talkId: number) => void;
-}) {
+function CandidatePortal({ onExit }: { onExit: () => void }) {
   const [view, setView] = useState<CandidateView>("inicio");
   const [fontScale, setFontScale] = useState(100);
   const [highContrast, setHighContrast] = useState(false);
@@ -614,7 +550,6 @@ function CandidatePortal({
           {view === "perfil" && <CandidateProfile onSaved={saveMessage} />}
           {view === "questionario" && <CandidateQuestionnaire onSaved={saveMessage} />}
           {view === "curriculo" && <CandidateResume onSaved={saveMessage} />}
-          {view === "eventos" && <CandidateEvents talks={talks} reservedTalkIds={reservedTalkIds} onReserve={(talkId) => { onReserve(talkId); saveMessage("Ingresso retirado com sucesso."); }} />}
           {view === "videoaulas" && <CandidateVideoLessons />}
         </main>
       </div>
@@ -1190,7 +1125,7 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
                   <div className="account-type-options">
                     <label className={accountType === "candidate" ? "selected" : ""}>
                       <input type="radio" name="account-type" value="candidate" checked={accountType === "candidate"} onChange={() => setAccountType("candidate")} />
-                      <span><b>Pessoa com deficiência visual</b><small>Quero preparar meu perfil e encontrar oportunidades.</small></span>
+                      <span><b>Usuário</b><small>Quero preparar meu perfil e encontrar oportunidades.</small></span>
                     </label>
                     <label className={accountType === "company" ? "selected" : ""}>
                       <input type="radio" name="account-type" value="company" checked={accountType === "company"} onChange={() => setAccountType("company")} />
@@ -1384,7 +1319,6 @@ function AdminPortal({
 export function AptaApp() {
   const [portal, setPortal] = useState<Portal>("auth");
   const [talks, setTalks] = useState<Talk[]>(initialTalks);
-  const [reservedTalkIds, setReservedTalkIds] = useState<number[]>([]);
   const [trainingBookings, setTrainingBookings] = useState<TrainingBooking[]>(initialTrainingBookings);
 
   useEffect(() => {
@@ -1409,12 +1343,6 @@ export function AptaApp() {
     }
   }
 
-  function reserveTicket(talkId: number) {
-    if (reservedTalkIds.includes(talkId)) return;
-    setTalks((current) => current.map((talk) => talk.id === talkId && talk.issued < talk.capacity ? { ...talk, issued: talk.issued + 1 } : talk));
-    setReservedTalkIds((current) => [...current, talkId]);
-  }
-
   function createTalk(talk: Omit<Talk, "id" | "issued">) {
     setTalks((current) => [{ ...talk, id: Math.max(0, ...current.map((item) => item.id)) + 1, issued: 0 }, ...current]);
   }
@@ -1427,7 +1355,7 @@ export function AptaApp() {
     setTrainingBookings((current) => current.map((booking) => booking.id === bookingId ? { ...booking, status: "Confirmado" } : booking));
   }
 
-  if (portal === "candidate") return <CandidatePortal onExit={() => void exitAccount()} talks={talks} reservedTalkIds={reservedTalkIds} onReserve={reserveTicket} />;
+  if (portal === "candidate") return <CandidatePortal onExit={() => void exitAccount()} />;
   if (portal === "company") return <CompanyPortal onExit={() => void exitAccount()} bookings={trainingBookings} onScheduleTraining={scheduleTraining} />;
   if (portal === "admin") return <AdminPortal onExit={() => void exitAccount()} talks={talks} bookings={trainingBookings} onCreateTalk={createTalk} onConfirmTraining={confirmTraining} />;
   return <UnifiedAccess onAuthenticated={setPortal} />;

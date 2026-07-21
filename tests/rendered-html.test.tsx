@@ -45,7 +45,7 @@ test("renders quick access buttons for the three default accounts", () => {
   assert.match(html, /candidato@apta\.org\.br/i);
   assert.match(html, /empresa@apta\.org\.br/i);
   assert.match(html, /admin@apta\.org\.br/i);
-  assert.match(html, /Preencher credenciais e entrar como Pessoa com deficiência visual/i);
+  assert.match(html, /Preencher credenciais e entrar como Usuário/i);
 });
 
 test("defines a full-stack Render deployment with private Postgres", async () => {

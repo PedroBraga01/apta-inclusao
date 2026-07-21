@@ -39,6 +39,7 @@ test("offers categorized video lessons in the candidate portal", async () => {
     { Excel: 5, PowerPoint: 5, "Inglês": 5 },
   );
   assert.ok(candidateNavigation.some((item) => item.id === "videoaulas"));
+  assert.ok(!candidateNavigation.some((item) => item.id === "eventos"));
 
   for (const lesson of videoLessons) {
     const url = new URL(lesson.url);
