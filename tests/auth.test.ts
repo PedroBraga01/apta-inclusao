@@ -87,3 +87,32 @@ test("rejects cross-site state-changing requests", () => {
     ),
   );
 });
+
+test("accepts the public origin forwarded by a trusted reverse proxy", () => {
+  assert.doesNotThrow(() =>
+    assertSameOrigin(
+      new Request("http://internal-service:10000/api/auth/login", {
+        headers: {
+          host: "internal-service:10000",
+          origin: "https://apta-inclusao.onrender.com",
+          "sec-fetch-site": "same-origin",
+          "x-forwarded-host": "apta-inclusao.onrender.com",
+          "x-forwarded-proto": "https",
+        },
+      }),
+    ),
+  );
+
+  assert.throws(() =>
+    assertSameOrigin(
+      new Request("http://internal-service:10000/api/auth/login", {
+        headers: {
+          origin: "https://attacker.example",
+          "sec-fetch-site": "cross-site",
+          "x-forwarded-host": "apta-inclusao.onrender.com",
+          "x-forwarded-proto": "https",
+        },
+      }),
+    ),
+  );
+});
