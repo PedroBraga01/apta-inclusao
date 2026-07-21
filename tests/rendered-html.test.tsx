@@ -4,6 +4,7 @@ import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AptaApp } from "../app/AptaApp";
+import { GET as getHealth } from "../app/api/health/route";
 
 function renderAccessPage(): string {
   return renderToStaticMarkup(createElement(AptaApp));
@@ -65,4 +66,26 @@ test("defines a full-stack Render deployment with private Postgres", async () =>
   assert.match(blueprint, /ipAllowList: \[\]/u);
   assert.match(packageJson, /"build": "next build"/u);
   assert.doesNotMatch(packageJson, /vinext|wrangler|cloudflare/iu);
+});
+
+test("keeps the demonstration deployment healthy without PostgreSQL", async () => {
+  const previousDatabaseUrl = process.env.DATABASE_URL;
+  delete process.env.DATABASE_URL;
+
+  try {
+    const response = await getHealth();
+    const body = (await response.json()) as {
+      status: string;
+      database: string;
+    };
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(body, {
+      status: "demo",
+      database: "not_configured",
+    });
+  } finally {
+    if (previousDatabaseUrl === undefined) delete process.env.DATABASE_URL;
+    else process.env.DATABASE_URL = previousDatabaseUrl;
+  }
 });

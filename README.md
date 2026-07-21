@@ -85,6 +85,10 @@ O Render injeta `DATABASE_URL`, executa o build, aplica as migrações no comand
 de pré-publicação e inicia o servidor. Novos commits na `main` geram publicações
 automáticas.
 
+Sem `DATABASE_URL`, a interface inicia em modo de demonstração e os três acessos
+padrão continuam disponíveis, mas cadastro, sessões e persistência exigem o
+PostgreSQL configurado.
+
 ## Estrutura principal
 
 - `app/`: páginas, componentes, estilos e rotas HTTP;
