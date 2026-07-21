@@ -961,6 +961,17 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
 
   async function submitLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const demoAccount = demoAccounts.find(
+      (account) =>
+        account.email === email.trim().toLowerCase() &&
+        account.password === password,
+    );
+    if (demoAccount) {
+      setError("");
+      onAuthenticated(demoAccount.portal);
+      return;
+    }
+
     setBusy(true);
     setError("");
     try {
@@ -1092,24 +1103,12 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
     }
   }
 
-  async function enterDemo(account: (typeof demoAccounts)[number]) {
+  function enterDemo(account: (typeof demoAccounts)[number]) {
     setEmail(account.email);
     setPassword(account.password);
-    setBusy(true);
     setError("");
     setMessage("");
-    try {
-      const result = await loginAccount(account.email, account.password);
-      onAuthenticated(rolePortal(result.user.role));
-    } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Não foi possível entrar com este acesso rápido.",
-      );
-    } finally {
-      setBusy(false);
-    }
+    onAuthenticated(account.portal);
   }
 
   return (
