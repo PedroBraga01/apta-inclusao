@@ -38,12 +38,13 @@ test("keeps locale and product metadata in the root layout", async () => {
   assert.match(source, /profissionais com deficiência visual/u);
 });
 
-test("does not expose legacy demonstration credentials", () => {
+test("renders quick access buttons for the three default accounts", () => {
   const html = renderAccessPage();
-  assert.doesNotMatch(html, /candidato@apta\.org\.br/i);
-  assert.doesNotMatch(html, /empresa@apta\.org\.br/i);
-  assert.doesNotMatch(html, /admin@apta\.org\.br/i);
-  assert.doesNotMatch(html, /Acessos de demonstração/i);
+  assert.match(html, /Acessos rápidos/i);
+  assert.match(html, /candidato@apta\.org\.br/i);
+  assert.match(html, /empresa@apta\.org\.br/i);
+  assert.match(html, /admin@apta\.org\.br/i);
+  assert.match(html, /Preencher credenciais e entrar como Pessoa com deficiência visual/i);
 });
 
 test("defines a full-stack Render deployment with private Postgres", async () => {
@@ -59,6 +60,7 @@ test("defines a full-stack Render deployment with private Postgres", async () =>
   assert.match(blueprint, /type: web/u);
   assert.match(blueprint, /runtime: node/u);
   assert.match(blueprint, /preDeployCommand: npm run db:migrate/u);
+  assert.match(blueprint, /npm run db:seed/u);
   assert.match(blueprint, /fromDatabase:/u);
   assert.match(blueprint, /ipAllowList: \[\]/u);
   assert.match(packageJson, /"build": "next build"/u);

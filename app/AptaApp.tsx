@@ -31,6 +31,7 @@ import {
   candidateNavigation,
   candidates,
   companyNavigation,
+  demoAccounts,
   initialTalks,
   initialTrainingBookings,
   videoLessons,
@@ -48,6 +49,16 @@ import type {
   VideoLessonCategory,
 } from "./apta/types";
 
+function useRootFontScale(fontScale: number) {
+  useEffect(() => {
+    const previousSize = document.documentElement.style.fontSize;
+    document.documentElement.style.fontSize = `${fontScale}%`;
+    return () => {
+      document.documentElement.style.fontSize = previousSize;
+    };
+  }, [fontScale]);
+}
+
 function CandidateSidebar({
   view,
   onChange,
@@ -59,7 +70,7 @@ function CandidateSidebar({
 }) {
   return (
     <aside className="candidate-sidebar">
-      <button className="brand-button" type="button" onClick={onExit} aria-label="Voltar para o início da APTA"><Brand inverse /></button>
+      <div className="sidebar-brand" aria-label="APTA"><Brand inverse /></div>
       <nav aria-label="Área do candidato">
         {candidateNavigation.map((item) => (
           <button
@@ -569,7 +580,10 @@ function CandidatePortal({
   const [view, setView] = useState<CandidateView>("inicio");
   const [fontScale, setFontScale] = useState(100);
   const [highContrast, setHighContrast] = useState(false);
+  const [comfortableReading, setComfortableReading] = useState(false);
   const [message, setMessage] = useState("");
+
+  useRootFontScale(fontScale);
 
   function readPage() {
     if (!("speechSynthesis" in window)) {
@@ -590,9 +604,9 @@ function CandidatePortal({
   }
 
   return (
-    <div className={`candidate-portal ${highContrast ? "candidate-portal--contrast" : ""}`} style={{ fontSize: `${fontScale}%` }}>
+    <div className={`candidate-portal ${highContrast ? "candidate-portal--contrast" : ""} ${comfortableReading ? "candidate-portal--spacious" : ""}`}>
       <a className="skip-link" href="#candidate-main">Pular para o conteúdo principal</a>
-      <AccessibilityBar fontScale={fontScale} setFontScale={setFontScale} highContrast={highContrast} setHighContrast={setHighContrast} onRead={readPage} />
+      <AccessibilityBar fontScale={fontScale} setFontScale={setFontScale} highContrast={highContrast} setHighContrast={setHighContrast} comfortableReading={comfortableReading} setComfortableReading={setComfortableReading} onRead={readPage} />
       <div className="candidate-shell">
         <CandidateSidebar view={view} onChange={setView} onExit={onExit} />
         <main className="candidate-main" id="candidate-main" tabIndex={-1}>
@@ -620,7 +634,7 @@ function CompanySidebar({
 }) {
   return (
     <aside className="company-sidebar">
-      <button className="brand-button" type="button" onClick={onExit} aria-label="Voltar para o início da APTA"><Brand inverse /></button>
+      <div className="sidebar-brand" aria-label="APTA"><Brand inverse /></div>
       <nav aria-label="Área da empresa">
         <p>Plataforma</p>
         {companyNavigation.map((item) => (
@@ -916,7 +930,10 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
   const [busy, setBusy] = useState(false);
   const [fontScale, setFontScale] = useState(100);
   const [highContrast, setHighContrast] = useState(false);
+  const [comfortableReading, setComfortableReading] = useState(false);
   const titleRef = useRef<HTMLHeadingElement>(null);
+
+  useRootFontScale(fontScale);
 
   useEffect(() => {
     titleRef.current?.focus();
@@ -1075,10 +1092,30 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
     }
   }
 
+  async function enterDemo(account: (typeof demoAccounts)[number]) {
+    setEmail(account.email);
+    setPassword(account.password);
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const result = await loginAccount(account.email, account.password);
+      onAuthenticated(rolePortal(result.user.role));
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Não foi possível entrar com este acesso rápido.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
-    <div className={`auth-page ${highContrast ? "auth-page--contrast" : ""}`} style={{ fontSize: `${fontScale}%` }}>
+    <div className={`auth-page ${highContrast ? "auth-page--contrast" : ""} ${comfortableReading ? "auth-page--spacious" : ""}`}>
       <a className="skip-link" href="#auth-card">Pular para o formulário de acesso</a>
-      <AccessibilityBar fontScale={fontScale} setFontScale={setFontScale} highContrast={highContrast} setHighContrast={setHighContrast} onRead={readPage} />
+      <AccessibilityBar fontScale={fontScale} setFontScale={setFontScale} highContrast={highContrast} setHighContrast={setHighContrast} comfortableReading={comfortableReading} setComfortableReading={setComfortableReading} onRead={readPage} />
       <main className="auth-shell" id="auth-main">
         <section className="auth-intro" aria-labelledby="auth-intro-title">
           <Brand inverse />
@@ -1110,6 +1147,19 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
               </form>
               <div className="auth-divider"><span>ou</span></div>
               <button className="button button--outline button--full" type="button" onClick={() => changeMode("register")}>Cadastrar-se</button>
+              <section className="auth-demo" aria-labelledby="demo-access-title">
+                <p id="demo-access-title"><b>Acessos rápidos</b><span>Escolha um perfil para preencher os dados e entrar.</span></p>
+                <div>
+                  {demoAccounts.map((account) => (
+                    <button type="button" key={account.portal} onClick={() => enterDemo(account)} disabled={busy} aria-label={`Preencher credenciais e entrar como ${account.label}`}>
+                      <span>{account.label}</span>
+                      <small>{account.email}</small>
+                      <small>Senha: {account.password}</small>
+                      <b>Acessar <span aria-hidden="true">→</span></b>
+                    </button>
+                  ))}
+                </div>
+              </section>
             </>
           )}
 
@@ -1206,7 +1256,7 @@ function UnifiedAccess({ onAuthenticated }: { onAuthenticated: (portal: AccountP
 function AdminSidebar({ view, onChange, onExit }: { view: AdminView; onChange: (view: AdminView) => void; onExit: () => void }) {
   return (
     <aside className="admin-sidebar">
-      <button className="brand-button" type="button" onClick={onExit} aria-label="Voltar para o início"><Brand inverse /></button>
+      <div className="sidebar-brand" aria-label="APTA"><Brand inverse /></div>
       <span className="admin-label">Administração</span>
       <nav aria-label="Administração APTA">
         {adminNavigation.map((item) => <button type="button" key={item.id} className={view === item.id ? "active" : ""} aria-current={view === item.id ? "page" : undefined} onClick={() => onChange(item.id)}><Marker>{item.marker}</Marker>{item.label}</button>)}
@@ -1272,7 +1322,7 @@ function AdminTalks({ talks, onCreate }: { talks: Talk[]; onCreate: (talk: Omit<
     <section className="admin-section" aria-labelledby="admin-talks-title">
       <header className="admin-heading"><div><p className="section-kicker">Programação</p><h1 id="admin-talks-title">Palestras</h1><p>Cadastre eventos, defina a capacidade e acompanhe a retirada de ingressos.</p></div><button className="button button--primary" type="button" onClick={() => setShowForm(!showForm)}>{showForm ? "Fechar formulário" : "Nova palestra"}</button></header>
       {showForm && <form className="admin-create-form" onSubmit={createTalk}><div className="section-title-row"><div><p className="section-kicker">Novo evento</p><h2>Informações da palestra</h2></div><span>Todos os campos são obrigatórios</span></div><div className="admin-form-grid"><label className="admin-field-wide">Título<input name="title" required placeholder="Ex.: Tecnologia assistiva e autonomia" /></label><label>Data<input name="date" type="date" required min="2026-07-17" /></label><label>Horário<input name="time" type="time" required /></label><label>Formato<select name="format" defaultValue="Online" required><option>Online</option><option>Presencial</option></select></label><label>Local ou canal<input name="location" required placeholder="Ex.: Auditório SENAI" /></label><label>Quantidade de pessoas<input name="capacity" type="number" min="1" max="5000" defaultValue="100" required /></label><label>Status<select name="status" defaultValue="Publicada"><option>Publicada</option><option>Rascunho</option></select></label><label className="admin-field-wide">Descrição<textarea name="description" rows={4} required placeholder="Explique o objetivo e o conteúdo do encontro." /></label></div><div className="form-actions"><button className="button button--outline" type="button" onClick={() => setShowForm(false)}>Cancelar</button><button className="button button--primary" type="submit">Salvar palestra</button></div></form>}
-      <div className="admin-table-wrap"><table className="admin-table"><caption className="sr-only">Palestras cadastradas</caption><thead><tr><th>Palestra</th><th>Data</th><th>Formato</th><th>Ingressos</th><th>Status</th></tr></thead><tbody>{talks.map((talk) => <tr key={talk.id}><td><b>{talk.title}</b><small>{talk.location}</small></td><td>{talk.date}<small>{talk.time}</small></td><td><span className="table-tag">{talk.format}</span></td><td><b>{talk.issued}/{talk.capacity}</b><span className="progress-track"><span style={{ width: `${Math.min(100, (talk.issued / talk.capacity) * 100)}%` }} /></span></td><td><span className={`table-status table-status--${talk.status === "Publicada" ? "live" : "draft"}`}>{talk.status}</span></td></tr>)}</tbody></table></div>
+      <div className="admin-table-wrap"><table className="admin-table"><caption className="sr-only">Palestras cadastradas</caption><thead><tr><th>Palestra</th><th>Data</th><th>Formato</th><th>Ingressos</th><th>Status</th></tr></thead><tbody>{talks.map((talk) => <tr key={talk.id}><td data-label="Palestra"><b>{talk.title}</b><small>{talk.location}</small></td><td data-label="Data">{talk.date}<small>{talk.time}</small></td><td data-label="Formato"><span className="table-tag">{talk.format}</span></td><td data-label="Ingressos"><b>{talk.issued}/{talk.capacity}</b><span className="progress-track"><span style={{ width: `${Math.min(100, (talk.issued / talk.capacity) * 100)}%` }} /></span></td><td data-label="Status"><span className={`table-status table-status--${talk.status === "Publicada" ? "live" : "draft"}`}>{talk.status}</span></td></tr>)}</tbody></table></div>
     </section>
   );
 }

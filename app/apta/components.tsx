@@ -25,12 +25,16 @@ export function AccessibilityBar({
   setFontScale,
   highContrast,
   setHighContrast,
+  comfortableReading,
+  setComfortableReading,
   onRead,
 }: {
   fontScale: number;
   setFontScale: (value: number) => void;
   highContrast: boolean;
   setHighContrast: (value: boolean) => void;
+  comfortableReading: boolean;
+  setComfortableReading: (value: boolean) => void;
   onRead: () => void;
 }) {
   return (
@@ -39,31 +43,43 @@ export function AccessibilityBar({
       role="region"
       aria-label="Ferramentas de acessibilidade"
     >
-      <p>Ferramentas de acessibilidade</p>
+      <p>
+        <b>Acessibilidade</b>
+        <span>Tamanho do texto: {fontScale}%</span>
+      </p>
       <div className="accessibility-actions">
         <button
           type="button"
-          onClick={() => setFontScale(Math.max(100, fontScale - 10))}
-          aria-label="Diminuir tamanho do texto"
+          disabled={fontScale === 100}
+          onClick={() => setFontScale(Math.max(100, fontScale - 25))}
+          aria-label="Reduzir tamanho do texto"
         >
-          A−
+          A− <span>Reduzir</span>
         </button>
         <button
           type="button"
-          onClick={() => setFontScale(Math.min(130, fontScale + 10))}
-          aria-label="Aumentar tamanho do texto"
+          disabled={fontScale === 200}
+          onClick={() => setFontScale(Math.min(200, fontScale + 25))}
+          aria-label="Ampliar tamanho do texto"
         >
-          A+
+          A+ <span>Ampliar</span>
+        </button>
+        <button
+          type="button"
+          aria-pressed={comfortableReading}
+          onClick={() => setComfortableReading(!comfortableReading)}
+        >
+          <span aria-hidden="true">↕</span> Mais espaço
         </button>
         <button
           type="button"
           aria-pressed={highContrast}
           onClick={() => setHighContrast(!highContrast)}
         >
-          <span className="contrast-dot" aria-hidden="true" /> Alto contraste
+          <span className="contrast-dot" aria-hidden="true" /> Contraste
         </button>
         <button type="button" onClick={onRead}>
-          <span aria-hidden="true">◖</span> Ouvir página
+          <span aria-hidden="true">◖</span> Ouvir
         </button>
       </div>
     </div>

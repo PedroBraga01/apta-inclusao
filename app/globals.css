@@ -30,6 +30,7 @@ body {
   color: var(--ink);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
 }
 
 button,
@@ -48,7 +49,9 @@ textarea {
 }
 
 :focus-visible {
-  outline: 3px solid var(--coral);
+  outline: 3px solid #ffdf5d;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px #11162e;
 }
 
 button {
@@ -101,7 +104,7 @@ button:disabled {
 
 .button {
   display: inline-flex;
-  min-height: 46px;
+  min-height: 48px;
   align-items: center;
   justify-content: center;
   gap: 12px;
@@ -700,8 +703,8 @@ button:disabled {
   display: flex;
   min-height: 44px;
   align-items: center;
-  justify-content: flex-end;
-  gap: 28px;
+  justify-content: space-between;
+  gap: 20px;
   background: #09090e;
   color: #fff;
   padding: 5px 24px;
@@ -709,8 +712,19 @@ button:disabled {
 }
 
 .accessibility-bar p {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0;
-  color: #bdbdc5;
+  color: #e8e8ee;
+}
+
+.accessibility-bar p b {
+  color: white;
+}
+
+.accessibility-bar p span {
+  color: #c9cad3;
 }
 
 .accessibility-actions {
@@ -720,7 +734,7 @@ button:disabled {
 }
 
 .accessibility-actions button {
-  min-height: 32px;
+  min-height: 44px;
   border: 1px solid #3e3e47;
   border-radius: 7px;
   background: transparent;
@@ -728,6 +742,10 @@ button:disabled {
   padding: 5px 10px;
   font-weight: 800;
   cursor: pointer;
+}
+
+.accessibility-actions button:disabled {
+  opacity: 0.5;
 }
 
 .accessibility-actions button:hover,
@@ -1364,13 +1382,14 @@ button:disabled {
 }
 
 .candidate-portal--contrast {
-  --blue: #0000a8;
-  --ink: #000;
-  --muted: #1a1a1a;
-  --paper: #fff;
-  --surface: #fff;
-  --line: #000;
-  background: white;
+  --blue: #b9df4a;
+  --ink: #fff;
+  --muted: #f1f1f1;
+  --paper: #000;
+  --surface: #0b0b0b;
+  --line: #fff;
+  background: #000;
+  color: #fff;
 }
 
 .candidate-portal--contrast .candidate-sidebar,
@@ -1380,11 +1399,59 @@ button:disabled {
 
 .candidate-portal--contrast .task-panel,
 .candidate-portal--contrast .opportunity-panel,
+.candidate-portal--contrast .opportunity-card,
+.candidate-portal--contrast .talk-card,
 .candidate-portal--contrast .accessible-form fieldset,
+.candidate-portal--contrast .upload-zone,
 .candidate-portal--contrast .video-lesson-media,
 .candidate-portal--contrast .video-lessons-filters button {
   border-width: 2px;
-  border-color: #000;
+  border-color: #fff;
+  background: #0b0b0b;
+  color: #fff;
+}
+
+.candidate-portal--contrast :is(h1, h2, h3, b, strong, label, legend, dt, dd),
+.candidate-portal--contrast .section-kicker,
+.candidate-portal--contrast .task-row small,
+.candidate-portal--contrast .inner-heading > p:last-child,
+.candidate-portal--contrast .talk-card > p,
+.candidate-portal--contrast .talk-card dd {
+  color: #fff;
+}
+
+.candidate-portal--contrast input,
+.candidate-portal--contrast select,
+.candidate-portal--contrast textarea {
+  border: 2px solid #fff !important;
+  background: #000 !important;
+  color: #fff !important;
+}
+
+.candidate-portal--contrast .button--primary {
+  background: var(--lime);
+  color: #000;
+}
+
+.candidate-portal--contrast .choice-card:has(input:checked) {
+  border-color: var(--lime);
+  background: #1b1b1b;
+}
+
+.candidate-portal--contrast .candidate-sidebar nav {
+  background: #000;
+}
+
+.candidate-portal--spacious :is(p, li, dd, small) {
+  line-height: 1.75;
+  letter-spacing: 0.025em;
+  word-spacing: 0.08em;
+}
+
+.auth-page--spacious :is(p, small, label) {
+  line-height: 1.75;
+  letter-spacing: 0.025em;
+  word-spacing: 0.08em;
 }
 
 .candidate-portal--contrast .video-lessons-filters button.active {
@@ -3106,10 +3173,20 @@ button:disabled {
   font-size: 0.72rem;
 }
 
-.auth-demo summary {
-  min-height: 28px;
-  font-weight: 850;
-  cursor: pointer;
+.auth-demo > p {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+}
+
+.auth-demo > p b {
+  font-size: 0.78rem;
+}
+
+.auth-demo > p span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.45;
 }
 
 .auth-demo > div {
@@ -3120,7 +3197,7 @@ button:disabled {
 
 .auth-demo button {
   display: flex;
-  min-height: 48px;
+  min-height: 78px;
   align-items: flex-start;
   justify-content: center;
   flex-direction: column;
@@ -3137,7 +3214,7 @@ button:disabled {
   border-color: var(--blue);
 }
 
-.auth-demo button span {
+.auth-demo button > span {
   color: var(--blue);
   font-weight: 850;
 }
@@ -3145,6 +3222,16 @@ button:disabled {
 .auth-demo button small {
   margin-top: 3px;
   color: var(--muted);
+}
+
+.auth-demo button > b {
+  margin-top: 7px;
+  color: var(--blue);
+  font-size: 0.68rem;
+}
+
+.auth-demo button > b span {
+  margin-left: 4px;
 }
 
 .account-type-fieldset {
@@ -3259,8 +3346,8 @@ button:disabled {
 
 .auth-page--contrast .auth-card {
   border: 3px solid white;
-  background: white;
-  color: black;
+  background: #080808;
+  color: white;
 }
 
 .auth-page--contrast .auth-intro > p,
@@ -3271,7 +3358,44 @@ button:disabled {
 .auth-page--contrast .auth-card input,
 .auth-page--contrast .account-type-options label {
   border-width: 2px;
-  border-color: black;
+  border-color: white;
+  background: #000;
+  color: white;
+}
+
+.auth-page--contrast .auth-card :is(h2, label, legend, b),
+.auth-page--contrast .auth-description,
+.auth-page--contrast .field-help,
+.auth-page--contrast .terms-check,
+.auth-page--contrast .account-type-options small {
+  color: white;
+}
+
+.auth-page--contrast .section-kicker,
+.auth-page--contrast .auth-label-row button,
+.auth-page--contrast .auth-back {
+  color: var(--lime);
+}
+
+.auth-page--contrast .account-type-options label.selected,
+.auth-page--contrast .auth-demo {
+  background: #181818;
+}
+
+.auth-page--contrast .auth-demo button {
+  border-color: white;
+  background: #000;
+  color: white;
+}
+
+.auth-page--contrast .auth-demo button > span,
+.auth-page--contrast .auth-demo button > b {
+  color: var(--lime);
+}
+
+.auth-page--contrast .button--primary {
+  background: var(--lime);
+  color: #000;
 }
 
 .admin-login-page {
@@ -4360,6 +4484,703 @@ button:disabled {
 
   .admin-create-form {
     padding: 22px;
+  }
+}
+
+@media (max-width: 700px) {
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    min-height: 48px;
+    font-size: 1rem;
+  }
+
+  .accessibility-bar {
+    position: static;
+    gap: 12px;
+    padding: 14px 16px 16px;
+  }
+
+  .accessibility-bar p {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    font-size: 0.9rem;
+  }
+
+  .accessibility-actions {
+    display: grid;
+    width: 100%;
+    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+  }
+
+  .accessibility-actions button {
+    width: 100%;
+    min-height: 48px;
+    justify-content: center;
+    padding: 8px;
+    font-size: 0.85rem;
+  }
+
+  .accessibility-actions button:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .auth-page {
+    min-height: 100dvh;
+    background: #f4f3f8;
+  }
+
+  .auth-page:not(.auth-page--contrast) {
+    color: var(--ink);
+  }
+
+  .auth-shell {
+    width: 100%;
+    padding: 12px;
+  }
+
+  .auth-card {
+    border: 1.5px solid #c8c6d0;
+    border-radius: 18px;
+    padding: 24px 18px;
+    box-shadow: 0 12px 32px rgba(21, 14, 70, 0.1);
+  }
+
+  .auth-card-brand {
+    margin-bottom: 22px;
+  }
+
+  .auth-card h2 {
+    margin-top: 9px;
+    font-size: clamp(2rem, 10vw, 2.65rem);
+    line-height: 1.05;
+  }
+
+  .auth-description {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .auth-form {
+    gap: 12px;
+  }
+
+  .auth-form > label:not(.terms-check),
+  .account-type-fieldset legend,
+  .auth-label-row label {
+    font-size: 0.95rem;
+  }
+
+  .auth-form > input {
+    min-height: 56px;
+    border-width: 2px;
+    font-size: 1rem;
+  }
+
+  .auth-form .button,
+  .auth-card > .button {
+    min-height: 54px;
+  }
+
+  .auth-label-row {
+    align-items: flex-end;
+  }
+
+  .auth-label-row button,
+  .auth-back {
+    font-size: 0.88rem;
+  }
+
+  .account-type-options label {
+    min-height: 92px;
+    padding: 14px;
+  }
+
+  .account-type-options b {
+    font-size: 0.95rem;
+  }
+
+  .account-type-options small,
+  .field-help,
+  .terms-check {
+    font-size: 0.85rem;
+  }
+
+  .candidate-sidebar,
+  .company-sidebar,
+  .admin-sidebar {
+    position: sticky;
+    inset: 0 auto auto 0;
+    z-index: 50;
+    display: flex;
+    width: 100%;
+    min-height: 68px;
+    align-items: center;
+    flex-direction: row;
+    padding: 10px 14px;
+    box-shadow: 0 8px 20px rgba(9, 10, 20, 0.14);
+  }
+
+  .candidate-sidebar {
+    top: 0;
+    margin-top: 0;
+  }
+
+  .sidebar-brand {
+    display: flex;
+    align-items: center;
+  }
+
+  .candidate-sidebar .brand,
+  .company-sidebar .brand,
+  .admin-sidebar .brand {
+    margin: 0;
+    font-size: 1.8rem;
+  }
+
+  .candidate-sidebar nav,
+  .company-sidebar nav,
+  .admin-sidebar nav {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 70;
+    display: grid;
+    gap: 2px;
+    overflow: visible;
+    border-top: 1px solid rgba(255,255,255,0.25);
+    background: var(--blue);
+    padding: 6px max(6px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+    box-shadow: 0 -10px 28px rgba(9, 10, 20, 0.22);
+  }
+
+  .candidate-sidebar nav,
+  .company-sidebar nav {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .admin-sidebar nav {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    background: var(--navy);
+  }
+
+  .candidate-sidebar nav button,
+  .company-sidebar nav button,
+  .admin-sidebar nav button {
+    display: flex;
+    min-width: 0;
+    min-height: 64px;
+    align-items: center;
+    justify-content: center;
+    flex: initial;
+    flex-direction: column;
+    gap: 4px;
+    border-radius: 10px;
+    padding: 5px 2px;
+    font-size: clamp(0.62rem, 2.7vw, 0.75rem);
+    line-height: 1.1;
+    text-align: center;
+  }
+
+  .candidate-sidebar nav button.active,
+  .company-sidebar nav button.active,
+  .admin-sidebar nav button.active {
+    border: 1px solid rgba(255,255,255,0.52);
+    background: rgba(255,255,255,0.18);
+  }
+
+  .nav-marker {
+    width: 28px;
+    height: 28px;
+    border: 0;
+    font-size: 1rem;
+  }
+
+  .company-sidebar nav > p,
+  .admin-label,
+  .sidebar-support,
+  .company-plan-card,
+  .admin-profile {
+    display: none;
+  }
+
+  .sidebar-exit {
+    display: inline-flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    margin: 0 0 0 auto;
+    border: 1px solid rgba(255,255,255,0.48);
+    border-radius: 10px;
+    padding: 0 14px;
+    color: white;
+    text-align: center;
+  }
+
+  .company-topbar {
+    display: none;
+  }
+
+  .candidate-main,
+  .company-main,
+  .admin-main {
+    width: min(100% - 28px, 620px);
+    margin: 0 auto;
+    padding: 26px 0 calc(104px + env(safe-area-inset-bottom));
+  }
+
+  .candidate-main {
+    margin-top: 0;
+  }
+
+  .dashboard-heading,
+  .company-heading,
+  .admin-heading,
+  .inner-heading,
+  .events-heading {
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .dashboard-heading h1,
+  .inner-heading h1,
+  .company-heading h1,
+  .company-section h1,
+  .admin-heading h1 {
+    font-size: clamp(2rem, 11vw, 3rem);
+    line-height: 1.05;
+  }
+
+  .dashboard-heading > div > p:last-child,
+  .inner-heading > p:last-child,
+  .company-heading > div > p:last-child,
+  .admin-heading > div > p:last-child {
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+
+  .dashboard-heading .profile-avatar {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 auto;
+  }
+
+  .candidate-progress-card {
+    min-height: auto;
+    gap: 24px;
+    border-radius: 18px;
+    padding: 24px 20px;
+  }
+
+  .progress-copy h2 {
+    font-size: 2rem;
+  }
+
+  .progress-copy p {
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+
+  .progress-copy .button,
+  .company-heading > .button,
+  .admin-heading > .button,
+  .events-heading > .button {
+    width: 100%;
+  }
+
+  .progress-ring {
+    width: 108px;
+    height: 108px;
+    border-width: 10px;
+  }
+
+  .task-panel,
+  .opportunity-panel,
+  .talent-preview,
+  .agenda-card,
+  .candidate-card,
+  .admin-panel,
+  .admin-metrics article,
+  .admin-booking-grid article,
+  .ticket-admin-grid article {
+    border-radius: 15px;
+    padding: 18px;
+  }
+
+  .section-title-row {
+    flex-wrap: wrap;
+  }
+
+  .section-title-row > button,
+  .section-title-row > span {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .task-row {
+    min-height: 92px;
+    gap: 12px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: 14px 2px;
+  }
+
+  .candidate-main small,
+  .candidate-main .field-help,
+  .candidate-main .compact-list {
+    font-size: 0.9rem;
+  }
+
+  .opportunity-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .opportunity-card .match-badge {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .accessible-form fieldset,
+  .company-form fieldset,
+  .admin-create-form,
+  .training-scheduler,
+  .filter-panel {
+    border-radius: 15px;
+    padding: 20px 16px;
+  }
+
+  .accessible-form legend,
+  .company-form legend {
+    max-width: calc(100% - 16px);
+    font-size: 1.15rem;
+    line-height: 1.35;
+  }
+
+  .accessible-form input:not([type="radio"]):not([type="checkbox"]):not([type="file"]),
+  .accessible-form select,
+  .accessible-form textarea,
+  .company-form input,
+  .company-form select,
+  .filter-panel select,
+  .results-heading select,
+  .admin-form-grid input,
+  .admin-form-grid select,
+  .admin-form-grid textarea {
+    min-height: 54px;
+    border-width: 2px;
+    font-size: 1rem;
+  }
+
+  .choice-card {
+    min-height: 88px;
+    padding: 16px;
+  }
+
+  .choice-card input,
+  .terms-check input {
+    width: 24px;
+    height: 24px;
+  }
+
+  .form-actions,
+  .form-actions--split {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions .button {
+    width: 100%;
+  }
+
+  .question-progress {
+    gap: 5px;
+  }
+
+  .question-progress span {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 10px;
+    text-align: center;
+  }
+
+  .question-progress small {
+    display: block;
+    font-size: 0.72rem;
+    line-height: 1.2;
+  }
+
+  .upload-zone {
+    min-height: 230px;
+    padding: 22px 14px;
+  }
+
+  .ticket-summary {
+    align-self: stretch;
+    text-align: center;
+  }
+
+  .talk-card {
+    min-height: auto;
+    padding: 20px;
+  }
+
+  .talk-card dl > div {
+    grid-template-columns: 1fr;
+    gap: 3px;
+    font-size: 0.9rem;
+  }
+
+  .metric-grid article,
+  .admin-metrics article {
+    min-height: 145px;
+  }
+
+  .inclusion-banner {
+    gap: 20px;
+    padding: 22px 18px;
+  }
+
+  .banner-score {
+    width: 72px;
+    height: 72px;
+  }
+
+  .talent-preview-list button {
+    min-height: 86px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .talent-preview-list button > span:last-child {
+    display: none;
+  }
+
+  .results-heading {
+    width: 100%;
+  }
+
+  .results-heading label {
+    gap: 8px;
+  }
+
+  .candidate-card-actions {
+    grid-template-columns: 1fr 52px;
+  }
+
+  .save-button,
+  .drawer-close,
+  .account-chevron {
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  .consulting-page {
+    margin: -26px -14px calc(-104px - env(safe-area-inset-bottom));
+    overflow: hidden;
+  }
+
+  .consulting-hero {
+    min-height: auto;
+    padding: 34px 20px;
+  }
+
+  .consulting-hero h1 {
+    font-size: clamp(2.4rem, 12vw, 3.4rem);
+    line-height: 1;
+  }
+
+  .plan-intro,
+  .plan-grid {
+    padding-inline: 16px;
+  }
+
+  .plan-card {
+    padding: 22px 18px;
+  }
+
+  .service-strip {
+    margin-inline: 16px;
+  }
+
+  .service-strip article,
+  .content-card {
+    min-height: auto;
+  }
+
+  .category-pills {
+    width: 100%;
+  }
+
+  .category-pills button {
+    min-height: 44px;
+    flex: 1 1 45%;
+  }
+
+  .booking-list article {
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .drawer-backdrop {
+    align-items: flex-end;
+  }
+
+  .candidate-drawer {
+    width: 100%;
+    height: min(88dvh, 760px);
+    border-radius: 22px 22px 0 0;
+    padding: 58px 20px 26px;
+    box-shadow: 0 -18px 50px rgba(0,0,0,0.24);
+  }
+
+  .drawer-profile-head .match-score {
+    position: static;
+    align-self: flex-start;
+    margin-top: 14px;
+  }
+
+  .drawer-section dl > div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .drawer-actions {
+    position: sticky;
+    bottom: 0;
+    padding-top: 12px;
+    background: white;
+  }
+
+  .admin-event-list article {
+    align-items: start;
+    grid-template-columns: 54px minmax(0, 1fr);
+  }
+
+  .admin-event-list article > strong {
+    grid-column: 2;
+  }
+
+  .admin-booking-grid article {
+    min-height: auto;
+  }
+
+  .admin-table-wrap {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .admin-table,
+  .admin-table tbody,
+  .admin-table tr,
+  .admin-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .admin-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .admin-table tr {
+    margin-bottom: 14px;
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    background: white;
+    padding: 10px 16px;
+  }
+
+  .admin-table td,
+  .admin-table td:first-child {
+    display: grid;
+    min-width: 0;
+    align-items: start;
+    gap: 12px;
+    grid-template-columns: minmax(82px, 0.42fr) minmax(0, 1fr);
+    border-top: 1px solid var(--line);
+    padding: 14px 0;
+    font-size: 0.9rem;
+  }
+
+  .admin-table td:first-child {
+    border-top: 0;
+  }
+
+  .admin-table td::before {
+    color: var(--muted);
+    content: attr(data-label);
+    font-size: 0.75rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .admin-table .progress-track {
+    width: 100%;
+  }
+
+  .ticket-numbers {
+    grid-template-columns: 1fr;
+  }
+
+  .ticket-numbers small {
+    font-size: 0.82rem;
+  }
+
+  .live-message:not(:empty),
+  .auth-live-message:not(:empty) {
+    right: 14px;
+    bottom: calc(88px + env(safe-area-inset-bottom));
+    left: 14px;
+    max-width: none;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .candidate-main,
+  .company-main,
+  .admin-main {
+    width: calc(100% - 20px);
+  }
+
+  .candidate-sidebar nav button,
+  .company-sidebar nav button,
+  .admin-sidebar nav button {
+    font-size: 0.6rem;
+  }
+
+  .nav-marker {
+    width: 24px;
+    height: 24px;
+    font-size: 0.9rem;
+  }
+
+  .auth-shell {
+    padding: 8px;
+  }
+
+  .auth-card {
+    padding-inline: 15px;
   }
 }
 

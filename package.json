@@ -12,9 +12,10 @@
     "start": "next start -H 0.0.0.0",
     "test": "npm run build && npm run test:unit",
     "test:unit": "tsx --test tests/auth.test.ts tests/candidate.test.ts tests/rendered-html.test.tsx",
-    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern work --ignore-pattern outputs --ignore-pattern .vinext",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "tsx scripts/seed-default-accounts.ts"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",

@@ -70,8 +70,9 @@ Estado: **concluída**
 - [x] Criar login unificado mobile-first.
 - [x] Adicionar cadastro e recuperação de senha.
 - [x] Direcionar cada tipo de conta ao portal correto.
-- [x] Remover credenciais de demonstração.
-- [x] Implementar teclado, contraste, ampliação e regiões de anúncio.
+- [x] Restaurar usuários padrão e acessos rápidos para candidato, empresa e administração.
+- [x] Implementar teclado, contraste, ampliação até 200%, espaçamento e regiões de anúncio.
+- [x] Revisar o layout mobile para reflow a partir de 320 px e alvos de toque ampliados.
 
 ### Etapa 2 — Backend, autenticação e PostgreSQL
 
@@ -174,3 +175,21 @@ Estado: **planejada**
 Uma etapa só será considerada concluída quando código, migração, interface,
 permissões, responsividade, acessibilidade, testes e documentação estiverem
 coerentes e a versão publicada estiver saudável no Render.
+
+## 8. Registro de execução
+
+Este bloco será atualizado ao final de cada etapa.
+
+| Data | Etapa | Resultado |
+| --- | --- | --- |
+| 16/07/2026 | Planejamento | Plano técnico e funcional criado. |
+| 20/07/2026 | Revisão mobile | Navegação mobile redesenhada, acessibilidade para baixa visão ampliada e acessos rápidos dos três perfis restaurados. |
+
+## 9. Referências de acessibilidade aplicadas
+
+- [WCAG 2.2 — contraste mínimo](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum)
+- [WCAG 2.2 — redimensionamento de texto](https://www.w3.org/WAI/WCAG22/Understanding/resize-text)
+- [WCAG — reflow em 320 CSS pixels](https://www.w3.org/WAI/WCAG21/Understanding/reflow)
+- [W3C — necessidades de pessoas com baixa visão](https://www.w3.org/TR/low-vision-needs/)
+- [Apple — acessibilidade e ampliação de texto](https://developer.apple.com/design/human-interface-guidelines/accessibility/)
+- [Android — alvos de toque de 48 dp](https://developer.android.com/develop/ui/compose/accessibility/api-defaults)

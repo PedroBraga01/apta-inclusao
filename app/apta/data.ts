@@ -8,6 +8,7 @@ import type {
   TrainingBooking,
   VideoLesson,
 } from "./types";
+import { defaultAccounts } from "../../config/default-accounts";
 
 export const candidates: Candidate[] = [
   {
@@ -293,23 +294,6 @@ export const adminNavigation: Array<{
   { id: "participantes", label: "Ingressos", marker: "04" },
 ];
 
-export const demoAccounts: DemoAccount[] = [
-  {
-    email: "candidato@apta.org.br",
-    password: "apta123",
-    portal: "candidate",
-    label: "Candidato",
-  },
-  {
-    email: "empresa@apta.org.br",
-    password: "apta123",
-    portal: "company",
-    label: "Empresa",
-  },
-  {
-    email: "admin@apta.org.br",
-    password: "apta360",
-    portal: "admin",
-    label: "Administração",
-  },
-];
+export const demoAccounts: DemoAccount[] = defaultAccounts.map(
+  ({ email, password, portal, label }) => ({ email, password, portal, label }),
+);
